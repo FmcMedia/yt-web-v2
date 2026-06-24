@@ -313,8 +313,8 @@ def download_worker(job_id: str, url: str, format_id: Optional[str], options: di
         ydl_opts.update({
             "skip_download": True,
             "writesubtitles": True,
-            "writeautomaticsubs": True,
-            "subtitleslangs": ["en.*"],
+            "writeautomaticsub": True,
+            "subtitleslangs": ["en", "en-orig", "en-US", "en-GB"],
             "subtitlesformat": "srt",
             "nooverwrites": False,
         })
