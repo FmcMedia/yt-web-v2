@@ -27,6 +27,8 @@ HISTORY_FILE = BASE_DIR / "history.json"
 DOWNLOADS_DIR.mkdir(exist_ok=True)
 TRANSCRIPTS_DIR.mkdir(exist_ok=True)
 
+STORAGE_LIMIT_BYTES = int(os.environ.get("STORAGE_LIMIT_GB", 20)) * 1024 ** 3
+
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # In-memory job store
@@ -470,9 +472,15 @@ async def disk_usage():
         return sum(f.stat().st_size for f in path.glob("*") if f.is_file())
 
     usage = shutil.disk_usage(str(BASE_DIR))
+    downloads_bytes = dir_size(DOWNLOADS_DIR)
+    transcripts_bytes = dir_size(TRANSCRIPTS_DIR)
+    storage_used = downloads_bytes + transcripts_bytes
     return {
-        "downloads_bytes": dir_size(DOWNLOADS_DIR),
-        "transcripts_bytes": dir_size(TRANSCRIPTS_DIR),
+        "downloads_bytes": downloads_bytes,
+        "transcripts_bytes": transcripts_bytes,
+        "storage_used": storage_used,
+        "storage_limit": STORAGE_LIMIT_BYTES,
+        "storage_free": max(0, STORAGE_LIMIT_BYTES - storage_used),
         "disk_used": usage.used,
         "disk_total": usage.total,
         "disk_free": usage.free,

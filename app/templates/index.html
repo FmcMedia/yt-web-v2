@@ -761,23 +761,22 @@
                 const data = await res.json();
 
                 const section = document.getElementById('disk-section');
-                const pct = data.disk_total > 0 ? (data.disk_used / data.disk_total * 100) : 0;
+                const pct = data.storage_limit > 0 ? (data.storage_used / data.storage_limit * 100) : 0;
                 const fill = document.getElementById('disk-bar-fill');
                 const label = document.getElementById('disk-label');
                 const numbers = document.getElementById('disk-numbers');
                 const breakdown = document.getElementById('disk-breakdown');
 
-                fill.style.width = pct.toFixed(1) + '%';
-
-                // Color the bar based on usage
+                fill.style.width = Math.min(pct, 100).toFixed(1) + '%';
                 fill.className = 'disk-bar-fill ' + (pct > 85 ? 'bg-red-500' : pct > 65 ? 'bg-amber-500' : 'bg-blue-600');
 
-                label.textContent = `Disk ${pct.toFixed(0)}% used`;
-                numbers.textContent = `${formatBytes(data.disk_free)} free of ${formatBytes(data.disk_total)}`;
+                label.textContent = `Storage ${pct.toFixed(0)}% used`;
+                numbers.textContent = `${formatBytes(data.storage_used)} of ${formatBytes(data.storage_limit)} limit`;
 
                 const parts = [];
                 if (data.downloads_bytes > 0) parts.push(`Videos: ${formatBytes(data.downloads_bytes)}`);
                 if (data.transcripts_bytes > 0) parts.push(`Transcripts: ${formatBytes(data.transcripts_bytes)}`);
+                parts.push(`${formatBytes(data.storage_free)} remaining`);
                 breakdown.textContent = parts.join('  ·  ');
 
                 section.classList.remove('hidden');

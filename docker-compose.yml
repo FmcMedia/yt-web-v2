@@ -6,4 +6,6 @@ services:
     volumes:
       - ./downloads:/app/downloads
       - ./transcripts:/app/transcripts
+    environment:
+      - STORAGE_LIMIT_GB=20
     restart: unless-stopped
