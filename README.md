@@ -151,6 +151,17 @@ yt-web-v2/
 
 ## Changelog
 
+### v2.5 (2026-06-24)
+- PWA (Progressive Web App) support — installable on Android and iOS via "Add to Home Screen"
+- `manifest.json` with app name, theme color, and icons
+- Service worker (`sw.js`) — network-first, API/download calls never cached
+- Apple touch icon and apple-mobile-web-app meta tags for iOS
+
+### v2.4 (2026-06-24)
+- Mobile-responsive UI — fluid padding, stacked search/sort, full-width buttons on small screens
+- Mobile-optimized URL input (correct keyboard type on iOS/Android)
+- Version number displayed in page footer
+
 ### v2.3.1 (2026-06-23)
 - Fixed transcript downloads not working in Docker — yt-dlp Python API option is `writeautomaticsub` (not `writeautomaticsubs`); the wrong name silently skipped subtitle downloads
 - Added Node.js to Docker image for yt-dlp JS runtime support
@@ -194,7 +205,7 @@ Initial versioned release.
 
 ---
 
-## Roadmap (v2.4+)
+## Roadmap (v2.6+)
 
 - Download queue with concurrency limit
 - Playlist support

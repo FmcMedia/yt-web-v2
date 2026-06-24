@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="yt-web">
     <title>yt-web • DRM-Free YouTube Downloader</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><path d='M16 7v13M10 15l6 6 6-6M9 24h14' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="manifest" href="/static/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -323,7 +330,7 @@
             <div class="text-[10px] text-slate-500">
                 Only works with DRM-free content. You are responsible for respecting copyright and YouTube's Terms of Service.
             </div>
-            <div class="text-[10px] text-slate-400 mt-1">v2.4</div>
+            <div class="text-[10px] text-slate-400 mt-1">v2.5</div>
         </div>
     </div>
 
@@ -991,6 +998,11 @@
             refreshTranscripts();
             refreshDiskUsage();
         });
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js');
+        }
     </script>
 </body>
 </html>

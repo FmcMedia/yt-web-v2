@@ -5,6 +5,7 @@ import re
 import json
 import shutil
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import yt_dlp
 import os
@@ -16,6 +17,7 @@ from typing import Dict, Any, Optional
 from urllib.parse import urlparse
 
 app = FastAPI(title="yt-web - DRM-Free YouTube Downloader")
+app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
 # Paths
 BASE_DIR = Path(__file__).parent
