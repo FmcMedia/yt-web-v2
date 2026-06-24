@@ -151,6 +151,17 @@ yt-web-v2/
 
 ## Changelog
 
+### v2.2 (2026-06-23)
+- Switched to multi-stage Docker build using `mwader/static-ffmpeg` — copies static ffmpeg binary instead of `apt install`, reducing image content size significantly
+- Colima support documented for Mac CLI-only Docker usage
+- Host port changed to `8000:8000`
+
+### v2.1 (2026-06-23)
+- Added `Dockerfile` and `docker-compose.yml` for containerised deployment
+- Non-root `appuser` inside container
+- `downloads/` and `transcripts/` mounted as host volumes so files survive rebuilds
+- `restart: unless-stopped` policy
+
 ### v2.0 (2026-06-23)
 Initial versioned release.
 
@@ -168,11 +179,11 @@ Initial versioned release.
 
 ---
 
-## Roadmap (v2.1+)
+## Roadmap (v2.3+)
 
+- Storage limit with interactive file deletion prompt before download
 - Download queue with concurrency limit
 - Playlist support
-- Auto-cleanup of old files
 - Basic authentication
 - Browser push notifications on completion
 - Retry failed downloads
