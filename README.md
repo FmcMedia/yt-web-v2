@@ -151,6 +151,16 @@ yt-web-v2/
 
 ## Changelog
 
+### v2.3 (2026-06-23)
+- Storage limit enforcement — downloads check available space before starting
+- If limit would be exceeded, an interactive modal prompts the user to select files to delete before proceeding
+- Live counter in modal shows how much space selected deletions would free
+- Delete & Download button enabled only once enough space is selected
+- `STORAGE_LIMIT_GB` env var (default 20) configures the cap — supports fractional values (e.g. `0.1` for 100MB testing)
+- `/api/info` now returns `filesize_estimate` per format option so the UI can calculate space needed before download starts
+- `/api/disk` now returns `storage_used`, `storage_limit`, and `storage_free` against the configured cap
+- Disk usage bar in UI updated to show usage against the storage limit rather than total host disk
+
 ### v2.2 (2026-06-23)
 - Switched to multi-stage Docker build using `mwader/static-ffmpeg` — copies static ffmpeg binary instead of `apt install`, reducing image content size significantly
 - Colima support documented for Mac CLI-only Docker usage
@@ -179,9 +189,8 @@ Initial versioned release.
 
 ---
 
-## Roadmap (v2.3+)
+## Roadmap (v2.4+)
 
-- Storage limit with interactive file deletion prompt before download
 - Download queue with concurrency limit
 - Playlist support
 - Basic authentication
