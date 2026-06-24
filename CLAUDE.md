@@ -82,4 +82,4 @@ Tag each release: `git tag vX.Y && git push origin main --tags`
 Update `README.md` changelog with each version.  
 Version displayed in page footer (hardcoded in `index.html`).
 
-Current version: **v2.6**
+Current version: **v2.5**

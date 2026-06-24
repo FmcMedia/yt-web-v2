@@ -163,12 +163,6 @@ yt-web-v2/
 
 ## Changelog
 
-### v2.6 (2026-06-24)
-- Added Caddy reverse proxy for HTTPS on local network — required for PWA to install as a real app (not a Chrome shortcut) on Android
-- Caddy uses its internal CA to issue a self-signed cert for the server's local IP
-- HTTP on port 80 serves the Caddy root CA cert at `/caddy-root.crt` for easy Android installation
-- yt-web no longer exposes port 8000 to the host; all traffic goes through Caddy on 443
-
 ### v2.5 (2026-06-24)
 - PWA (Progressive Web App) support — installable on Android and iOS via "Add to Home Screen"
 - `manifest.json` with app name, theme color, and icons
@@ -225,6 +219,7 @@ Initial versioned release.
 
 ## Roadmap (v2.6+)
 
+- **Trusted HTTPS for PWA install** — Android Chrome requires HTTPS with a trusted cert to install as a real app rather than a browser shortcut; Caddy reverse proxy is already included in the compose file, pending a viable cert solution for local network use
 - Download queue with concurrency limit
 - Playlist support
 - Basic authentication
