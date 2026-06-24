@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# Downloads and transcripts (user data, not code)
+app/downloads/*
+app/transcripts/*
+!app/downloads/.gitkeep
+!app/transcripts/.gitkeep
+
+# History (runtime data)
+app/history.json
+
+# Logs
+*.log
+nohup.out
+
+# macOS
+.DS_Store
+
+# Docker
+*.env

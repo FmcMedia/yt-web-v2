@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>yt-web • DRM-Free YouTube Downloader</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><path d='M16 7v13M10 15l6 6 6-6M9 24h14' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+
+        :root { --primary: #3b82f6; }
+
+        body { font-family: 'Inter', system-ui, sans-serif; }
+
+        .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; }
+
+        .yt-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                       box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        .yt-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .progress-bar { transition: width 0.3s ease; }
+
+        .format-option { transition: all 0.1s ease; }
+        .format-option:hover { background-color: #1e293b; }
+        .format-option.selected {
+            background-color: #1e3a5f;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+
+        .section-header {
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .video-thumbnail {
+            aspect-ratio: 16 / 9;
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .video-thumbnail::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.03));
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 1px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .file-row { transition: background-color 0.1s ease; }
+        .file-row:hover { background-color: #0f172a; }
+
+        .disk-bar-track {
+            height: 4px;
+            background: #1e293b;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .disk-bar-fill {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.4s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- Top Nav -->
+    <nav class="border-b border-slate-800 bg-slate-900">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-download text-white text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-display text-2xl font-semibold tracking-tighter">yt-web</span>
+                    <span class="text-xs text-slate-500 ml-1">beta</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-x-4 text-sm">
+                <div class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-2xl text-xs flex items-center gap-x-1.5">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span class="text-emerald-400 font-medium">DRM-Free Mode</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto px-6 py-8">
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-semibold tracking-tighter">Download YouTube videos</h1>
+            <p class="mt-2 text-slate-400 max-w-md">Fast, clean downloads for DRM-free content. No ads. No tracking.</p>
+        </div>
+
+        <!-- URL Input -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 mb-8">
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5 tracking-widest">YOUTUBE URL</label>
+                <div class="flex gap-3 items-center">
+                    <input id="url-input"
+                           type="text"
+                           placeholder="https://www.youtube.com/watch?v=..."
+                           class="flex-1 bg-slate-950 border border-slate-700 focus:border-blue-500 transition-colors rounded-2xl px-4 py-3 text-sm font-mono placeholder:text-slate-500">
+                    <button id="analyze-btn" onclick="analyzeVideo()"
+                            class="bg-white hover:bg-slate-100 active:bg-white transition-all text-slate-900 font-semibold px-8 h-12 rounded-2xl flex items-center justify-center gap-x-2 text-sm shadow-sm flex-shrink-0">
+                        <i class="fa-solid fa-search"></i>
+                        <span class="font-semibold">Analyze</span>
+                    </button>
+                </div>
+            </div>
+            <div id="analyze-error" class="hidden mt-3 text-red-400 text-sm flex items-center gap-x-2">
+                <i class="fa-solid fa-exclamation-circle"></i>
+                <span></span>
+            </div>
+        </div>
+
+        <!-- Video Preview (hidden until analyzed) -->
+        <div id="preview-section" class="hidden mb-8">
+            <div class="yt-card bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden">
+                <div class="p-6">
+                    <div class="flex flex-col lg:flex-row gap-6">
+
+                        <!-- Thumbnail -->
+                        <div class="w-full lg:w-80 flex-shrink-0">
+                            <div id="thumbnail"
+                                 class="video-thumbnail w-full rounded-2xl border border-slate-700 shadow-inner bg-slate-800">
+                            </div>
+                        </div>
+
+                        <!-- Metadata -->
+                        <div class="flex-1 min-w-0">
+                            <div id="video-title" class="text-2xl font-semibold tracking-tight leading-tight mb-1"></div>
+                            <div class="flex items-center gap-x-3 text-sm text-slate-400 mb-4">
+                                <div id="video-uploader"></div>
+                                <div class="w-1 h-1 bg-slate-600 rounded-full"></div>
+                                <div id="video-duration"></div>
+                                <div class="w-1 h-1 bg-slate-600 rounded-full"></div>
+                                <div id="video-views"></div>
+                            </div>
+
+                            <!-- DRM Warning -->
+                            <div id="drm-warning" class="hidden mb-4 bg-red-950 border border-red-900 text-red-400 text-sm rounded-2xl px-4 py-3">
+                                <div class="flex gap-x-3 items-start">
+                                    <i class="fa-solid fa-shield-halved mt-0.5"></i>
+                                    <div>
+                                        <div class="font-semibold">DRM-protected content detected</div>
+                                        <div class="text-xs mt-0.5">This video only offers protected or image formats. Download is disabled.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Format Selection -->
+                            <div>
+                                <div class="section-header mb-2">QUALITY &amp; FORMAT</div>
+                                <div class="space-y-1 max-h-[210px] overflow-auto pr-1" id="format-list">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Download Controls -->
+                <div class="border-t border-slate-800 px-6 py-5 bg-slate-950 flex flex-col sm:flex-row items-center gap-4">
+                    <div id="video-options" class="flex items-center gap-x-3 flex-1">
+                        <label class="flex items-center gap-x-2 cursor-pointer text-sm">
+                            <input type="checkbox" id="subtitles" class="accent-blue-600">
+                            <span class="text-slate-300">Subtitles (if available)</span>
+                        </label>
+                        <label class="flex items-center gap-x-2 cursor-pointer text-sm">
+                            <input type="checkbox" id="embed-thumbnail" class="accent-blue-600" checked>
+                            <span class="text-slate-300">Embed thumbnail</span>
+                        </label>
+                    </div>
+                    <button onclick="startDownload()"
+                            id="download-btn"
+                            class="bg-blue-600 hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-7 py-2.5 rounded-2xl flex items-center gap-x-2 text-sm">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download</span>
+                    </button>
+                    <span id="download-status" class="ml-3 text-sm text-slate-400"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Downloads -->
+        <div id="active-section" class="hidden mb-8">
+            <div class="section-header mb-3 px-1">ACTIVE DOWNLOADS</div>
+            <div id="active-downloads" class="space-y-3"></div>
+        </div>
+
+        <!-- Disk Usage -->
+        <div id="disk-section" class="mb-8 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-x-4">
+                <i class="fa-solid fa-hard-drive text-slate-500 text-sm flex-shrink-0"></i>
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between text-xs text-slate-400 mb-1.5">
+                        <span id="disk-label">Disk usage</span>
+                        <span id="disk-numbers" class="tabular-nums"></span>
+                    </div>
+                    <div class="disk-bar-track">
+                        <div id="disk-bar-fill" class="disk-bar-fill bg-blue-600" style="width: 0%"></div>
+                    </div>
+                    <div class="text-[10px] text-slate-500 mt-1" id="disk-breakdown"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Videos -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <div class="section-header">COMPLETED VIDEOS</div>
+                <button onclick="refreshFiles()"
+                        class="text-xs flex items-center gap-x-1.5 text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-sync text-[10px]"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+            <div class="flex gap-2 mb-3">
+                <input id="files-search" type="text" placeholder="Filter by name..."
+                       oninput="renderFiles()"
+                       class="flex-1 bg-slate-900 border border-slate-800 focus:border-slate-600 transition-colors rounded-xl px-3 py-1.5 text-xs text-slate-300 placeholder:text-slate-600 outline-none">
+                <select id="files-sort" onchange="renderFiles()"
+                        class="bg-slate-900 border border-slate-800 text-slate-400 text-xs rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                    <option value="date-desc">Newest first</option>
+                    <option value="date-asc">Oldest first</option>
+                    <option value="name-asc">Name A→Z</option>
+                    <option value="name-desc">Name Z→A</option>
+                    <option value="size-desc">Largest first</option>
+                    <option value="size-asc">Smallest first</option>
+                </select>
+            </div>
+            <div id="files-list" class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden"></div>
+        </div>
+
+        <!-- Completed Transcripts -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <div class="section-header">COMPLETED TRANSCRIPTS</div>
+                <button onclick="refreshTranscripts()"
+                        class="text-xs flex items-center gap-x-1.5 text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-sync text-[10px]"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+            <div class="flex gap-2 mb-3">
+                <input id="transcripts-search" type="text" placeholder="Filter by name..."
+                       oninput="renderTranscripts()"
+                       class="flex-1 bg-slate-900 border border-slate-800 focus:border-slate-600 transition-colors rounded-xl px-3 py-1.5 text-xs text-slate-300 placeholder:text-slate-600 outline-none">
+                <select id="transcripts-sort" onchange="renderTranscripts()"
+                        class="bg-slate-900 border border-slate-800 text-slate-400 text-xs rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                    <option value="date-desc">Newest first</option>
+                    <option value="date-asc">Oldest first</option>
+                    <option value="name-asc">Name A→Z</option>
+                    <option value="name-desc">Name Z→A</option>
+                    <option value="size-desc">Largest first</option>
+                    <option value="size-asc">Smallest first</option>
+                </select>
+            </div>
+            <div id="transcripts-list" class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden"></div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <div class="text-[10px] text-slate-500">
+                Only works with DRM-free content. You are responsible for respecting copyright and YouTube's Terms of Service.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentVideoData = null;
+        let selectedFormatValue = null;
+        const pollIntervals = new Map();
+
+        function formatBytes(bytes) {
+            if (!bytes) return '';
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return parseFloat((bytes / Math.pow(1024, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatNumber(num) {
+            if (!num) return '';
+            return num.toLocaleString();
+        }
+
+        async function analyzeVideo() {
+            const urlInput = document.getElementById('url-input');
+            const errorEl = document.getElementById('analyze-error');
+            const preview = document.getElementById('preview-section');
+            const analyzeBtn = document.getElementById('analyze-btn');
+
+            const url = urlInput.value.trim();
+            if (!url) return;
+
+            errorEl.classList.add('hidden');
+            preview.classList.add('hidden');
+            document.getElementById('download-status').textContent = '';
+
+            const originalHTML = analyzeBtn.innerHTML;
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Analyzing...`;
+
+            try {
+                const res = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to analyze');
+                }
+                const data = await res.json();
+                currentVideoData = data;
+                renderPreview(data);
+                preview.classList.remove('hidden');
+            } catch (err) {
+                errorEl.querySelector('span').innerText = err.message;
+                errorEl.classList.remove('hidden');
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = originalHTML;
+            }
+        }
+
+        function renderPreview(data) {
+            const meta = data.metadata;
+
+            document.getElementById('thumbnail').style.backgroundImage = `url('${meta.thumbnail || ''}')`;
+            document.getElementById('video-title').innerText = meta.title || 'Untitled';
+            document.getElementById('video-uploader').innerText = meta.uploader || 'Unknown';
+            document.getElementById('video-duration').innerText = meta.duration || '';
+            document.getElementById('video-views').innerText = meta.view_count ? formatNumber(meta.view_count) + ' views' : '';
+
+            const drmWarning = document.getElementById('drm-warning');
+            const downloadBtn = document.getElementById('download-btn');
+
+            if (data.drm_detected) {
+                drmWarning.classList.remove('hidden');
+                downloadBtn.disabled = true;
+                downloadBtn.classList.add('!bg-slate-700', '!cursor-not-allowed');
+            } else {
+                drmWarning.classList.add('hidden');
+                downloadBtn.disabled = false;
+                downloadBtn.classList.remove('!bg-slate-700', '!cursor-not-allowed');
+            }
+
+            renderFormats(data.download_options);
+        }
+
+        function renderFormats(options) {
+            const container = document.getElementById('format-list');
+            container.innerHTML = '';
+            selectedFormatValue = null;
+
+            if (!options || options.length === 0) {
+                container.innerHTML = '<div class="text-sm text-slate-400 px-2">No formats available</div>';
+                return;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'text-[10px] uppercase tracking-widest text-slate-500 px-1 pt-1 pb-1';
+            header.textContent = 'Select quality';
+            container.appendChild(header);
+
+            options.forEach((opt, index) => {
+                const isTranscript = opt.value === 'transcript';
+                const div = document.createElement('div');
+                div.className = 'format-option border border-slate-700 hover:border-slate-600 rounded-2xl px-4 py-3 flex items-center justify-between cursor-pointer text-sm';
+
+                if (isTranscript) {
+                    const sep = document.createElement('div');
+                    sep.className = 'border-t border-slate-800 my-1';
+                    container.appendChild(sep);
+                }
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-x-2">
+                        <i class="fa-solid ${isTranscript ? 'fa-file-lines text-violet-400' : 'fa-film text-slate-400'} text-xs"></i>
+                        <span class="font-medium">${opt.label}</span>
+                    </div>
+                    <div class="text-xs text-blue-400">Select</div>
+                `;
+
+                div.onclick = () => {
+                    document.querySelectorAll('#format-list .format-option').forEach(el => {
+                        el.classList.remove('selected', 'border-blue-600');
+                    });
+                    div.classList.add('selected', 'border-blue-600');
+                    selectedFormatValue = opt.value;
+
+                    document.getElementById('video-options').style.opacity = isTranscript ? '0.3' : '1';
+                    document.getElementById('video-options').style.pointerEvents = isTranscript ? 'none' : '';
+                };
+
+                container.appendChild(div);
+
+                if (index === 0) {
+                    div.classList.add('selected', 'border-blue-600');
+                    selectedFormatValue = opt.value;
+                }
+            });
+        }
+
+        async function startDownload() {
+            const url = document.getElementById('url-input').value.trim();
+            if (!url || !currentVideoData) return;
+
+            const btn = document.getElementById('download-btn');
+            const statusSpan = document.getElementById('download-status');
+            btn.disabled = true;
+            statusSpan.textContent = 'starting...';
+
+            const isTranscript = selectedFormatValue === 'transcript';
+
+            const payload = new URLSearchParams({
+                url,
+                format_id: selectedFormatValue || 'best',
+                write_subtitles: isTranscript ? false : document.getElementById('subtitles').checked,
+                embed_thumbnail: isTranscript ? false : document.getElementById('embed-thumbnail').checked,
+            });
+
+            try {
+                const res = await fetch('/api/download', { method: 'POST', body: payload });
+                const result = await res.json();
+
+                if (result.job_id) {
+                    showActiveDownload(result.job_id, result.job_type);
+                    pollStatus(result.job_id, result.job_type);
+                    statusSpan.textContent = isTranscript ? 'fetching transcript...' : 'downloading...';
+                } else {
+                    btn.disabled = false;
+                    statusSpan.textContent = '';
+                }
+            } catch (e) {
+                alert('Failed to start: ' + e.message);
+                btn.disabled = false;
+                statusSpan.textContent = '';
+            }
+        }
+
+        async function cancelDownload(jobId) {
+            try {
+                await fetch(`/api/download/${jobId}`, { method: 'DELETE' });
+            } catch (e) {
+                console.error('Cancel failed', e);
+            }
+        }
+
+        function showActiveDownload(jobId, jobType) {
+            document.getElementById('active-section').classList.remove('hidden');
+
+            const el = document.createElement('div');
+            el.id = `job-${jobId}`;
+            el.className = 'bg-slate-900 border border-slate-700 rounded-3xl p-4';
+
+            const isTranscript = jobType === 'transcript';
+            const icon = isTranscript ? 'fa-file-lines text-violet-400' : 'fa-download text-blue-400';
+            const label = isTranscript ? 'Fetching transcript...' : 'Starting download...';
+
+            el.innerHTML = `
+                <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center gap-x-2 min-w-0 flex-1">
+                        <i class="fa-solid ${icon} flex-shrink-0"></i>
+                        <div class="font-medium text-sm truncate" id="job-title-${jobId}">${label}</div>
+                    </div>
+                    <div class="flex items-center gap-x-2">
+                        <button onclick="cancelDownload('${jobId}')" id="cancel-btn-${jobId}"
+                                title="Cancel download"
+                                class="text-slate-500 hover:text-red-400 text-xs px-2 py-0.5 rounded-lg hover:bg-red-950 transition-colors">
+                            <i class="fa-solid fa-xmark"></i> Cancel
+                        </button>
+                        <div class="text-xs px-2 py-0.5 bg-slate-800 rounded-full text-slate-400 whitespace-nowrap" id="job-status-${jobId}">Starting</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-x-2">
+                    <div class="flex-1 bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                        <div id="job-progress-${jobId}" class="progress-bar ${isTranscript ? 'bg-violet-500' : 'bg-blue-500'} h-2.5 transition-all" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs font-mono w-9 text-right ${isTranscript ? 'text-violet-400' : 'text-blue-400'}" id="job-percent-${jobId}">0%</div>
+                </div>
+                <div class="text-xs text-slate-400 mt-0.5" id="job-bytes-${jobId}"></div>
+                <div class="flex justify-between text-xs text-slate-400 mt-1">
+                    <div id="job-speed-${jobId}" class="font-medium"></div>
+                    <div id="job-eta-${jobId}"></div>
+                </div>
+            `;
+
+            document.getElementById('active-downloads').appendChild(el);
+        }
+
+        function pollStatus(jobId, jobType) {
+            if (pollIntervals.has(jobId)) clearInterval(pollIntervals.get(jobId));
+
+            const intervalId = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/status/${jobId}`);
+                    const status = await res.json();
+
+                    updateJobUI(jobId, status);
+
+                    const terminal = ['completed', 'error', 'cancelled'];
+                    if (terminal.includes(status.status)) {
+                        clearInterval(pollIntervals.get(jobId));
+                        pollIntervals.delete(jobId);
+
+                        // Hide cancel button
+                        const cancelBtn = document.getElementById(`cancel-btn-${jobId}`);
+                        if (cancelBtn) cancelBtn.style.display = 'none';
+
+                        setTimeout(() => {
+                            document.getElementById(`job-${jobId}`)?.remove();
+                            const container = document.getElementById('active-downloads');
+                            if (container.children.length === 0) {
+                                document.getElementById('active-section').classList.add('hidden');
+                            }
+                            if (status.status === 'completed') {
+                                if (jobType === 'transcript') {
+                                    refreshTranscripts(true);
+                                } else {
+                                    refreshFiles(true);
+                                }
+                                refreshDiskUsage();
+                            }
+                            document.getElementById('download-btn').disabled = false;
+                        }, status.status === 'cancelled' ? 800 : 1800);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    clearInterval(pollIntervals.get(jobId));
+                    pollIntervals.delete(jobId);
+                }
+            }, 900);
+
+            pollIntervals.set(jobId, intervalId);
+        }
+
+        function updateJobUI(jobId, status) {
+            const titleEl   = document.getElementById(`job-title-${jobId}`);
+            const statusEl  = document.getElementById(`job-status-${jobId}`);
+            const progressEl= document.getElementById(`job-progress-${jobId}`);
+            const percentEl = document.getElementById(`job-percent-${jobId}`);
+            const bytesEl   = document.getElementById(`job-bytes-${jobId}`);
+            const speedEl   = document.getElementById(`job-speed-${jobId}`);
+            const etaEl     = document.getElementById(`job-eta-${jobId}`);
+
+            if (status.filename && titleEl) {
+                titleEl.innerText = status.filename.replace(/\.[^/.]+$/, '');
+            }
+
+            if (statusEl) {
+                const labels = {
+                    starting: 'Starting', downloading: 'Downloading', processing: 'Processing',
+                    completed: 'Done', error: 'Error', cancelled: 'Cancelled'
+                };
+                statusEl.innerText = labels[status.status] || status.status;
+                if (status.status === 'completed')  statusEl.className = 'status-badge bg-emerald-900 text-emerald-400';
+                if (status.status === 'error')      statusEl.className = 'status-badge bg-red-900 text-red-400';
+                if (status.status === 'cancelled')  statusEl.className = 'status-badge bg-slate-700 text-slate-400';
+            }
+
+            if (progressEl && typeof status.progress === 'number') progressEl.style.width = status.progress + '%';
+            if (percentEl  && typeof status.progress === 'number') percentEl.innerText = status.progress + '%';
+
+            if (bytesEl) {
+                if (status.downloaded != null && status.total != null && status.total > 0) {
+                    bytesEl.innerText = `${(status.downloaded/1024/1024).toFixed(1)} / ${(status.total/1024/1024).toFixed(1)} MB`;
+                } else {
+                    bytesEl.innerText = '';
+                }
+            }
+
+            if (speedEl) speedEl.innerText = status.speed || '';
+            if (etaEl)   etaEl.innerText   = status.eta ? 'ETA ' + status.eta : '';
+
+            const mainStatus = document.getElementById('download-status');
+            if (mainStatus) {
+                if (['starting', 'downloading', 'processing'].includes(status.status)) {
+                    let txt = typeof status.progress === 'number' ? `${status.progress}%` : '';
+                    if (status.speed) txt += ` at ${status.speed}`;
+                    if (status.status === 'starting') txt = 'starting...';
+                    mainStatus.textContent = txt || status.status;
+                } else if (status.status === 'completed') {
+                    mainStatus.textContent = 'done';
+                    setTimeout(() => { mainStatus.textContent = ''; }, 3000);
+                } else if (status.status === 'cancelled') {
+                    mainStatus.textContent = 'cancelled';
+                    setTimeout(() => { mainStatus.textContent = ''; }, 2000);
+                } else if (status.status === 'error') {
+                    mainStatus.textContent = 'error';
+                }
+            }
+
+            if (status.error) {
+                const el = document.getElementById(`job-${jobId}`);
+                if (el) {
+                    const title = el.querySelector(`#job-title-${jobId}`);
+                    const badge = el.querySelector(`#job-status-${jobId}`);
+                    if (title) title.innerText = 'Failed';
+                    if (badge) { badge.innerText = 'Error'; badge.className = 'status-badge bg-red-900 text-red-400'; }
+                    let errDiv = el.querySelector('.download-error');
+                    if (!errDiv) {
+                        errDiv = document.createElement('div');
+                        errDiv.className = 'download-error text-red-400 text-xs mt-2 p-2 bg-red-950/50 rounded-xl';
+                        el.appendChild(errDiv);
+                    }
+                    errDiv.innerText = status.error;
+                }
+            }
+        }
+
+        function buildFileRow(file, onDelete, downloadPath, extraActions) {
+            const audioExts = ['mp3', 'm4a', 'opus', 'ogg', 'aac', 'flac', 'wav'];
+            const transcriptExts = ['srt', 'vtt', 'ttml', 'json3'];
+            const ext = file.name.split('.').pop().toLowerCase();
+            let icon = 'fa-file-video';
+            if (audioExts.includes(ext)) icon = 'fa-file-audio';
+            if (transcriptExts.includes(ext) || ext === 'md') icon = 'fa-file-lines';
+
+            const sourceLink = file.source_url
+                ? `<a href="${file.source_url}" target="_blank" rel="noopener" title="${file.source_url}" class="text-slate-500 hover:text-blue-400 text-xs"><i class="fa-brands fa-youtube"></i></a>`
+                : '';
+
+            const row = document.createElement('div');
+            row.className = 'file-row px-5 py-3.5 flex items-center justify-between gap-4';
+            row.innerHTML = `
+                <div class="flex items-center gap-x-3 min-w-0 flex-1">
+                    <i class="fa-solid ${icon} text-slate-400"></i>
+                    <div class="min-w-0">
+                        <div class="truncate font-medium text-sm">${file.name}</div>
+                        ${file.title ? `<div class="text-xs text-slate-500 truncate">${file.title}</div>` : ''}
+                    </div>
+                </div>
+                <div class="text-xs text-slate-400 tabular-nums flex-shrink-0">${formatBytes(file.size)}</div>
+                <div class="flex items-center gap-x-2 text-sm flex-shrink-0">
+                    ${sourceLink}
+                    <a href="${downloadPath}" onclick="indicateListDownload(this)" class="text-blue-400 hover:underline text-xs">Download</a>
+                    ${extraActions || ''}
+                    <button onclick="${onDelete}" class="ml-1 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                </div>
+            `;
+            return row;
+        }
+
+        let allFiles = [];
+        let allTranscripts = [];
+
+        function applySortFilter(items, searchVal, sortVal) {
+            const q = searchVal.trim().toLowerCase();
+            let out = q ? items.filter(f => f.name.toLowerCase().includes(q) || (f.title || '').toLowerCase().includes(q)) : [...items];
+            switch (sortVal) {
+                case 'date-desc': out.sort((a, b) => b.modified - a.modified); break;
+                case 'date-asc':  out.sort((a, b) => a.modified - b.modified); break;
+                case 'name-asc':  out.sort((a, b) => a.name.localeCompare(b.name)); break;
+                case 'name-desc': out.sort((a, b) => b.name.localeCompare(a.name)); break;
+                case 'size-desc': out.sort((a, b) => b.size - a.size); break;
+                case 'size-asc':  out.sort((a, b) => a.size - b.size); break;
+            }
+            return out;
+        }
+
+        function renderFiles(highlightNewest = false) {
+            const container = document.getElementById('files-list');
+            const q = document.getElementById('files-search')?.value || '';
+            const sort = document.getElementById('files-sort')?.value || 'date-desc';
+            const filtered = applySortFilter(allFiles, q, sort);
+
+            container.innerHTML = '';
+            if (filtered.length === 0) {
+                container.innerHTML = allFiles.length === 0
+                    ? '<div class="px-5 py-4 text-sm text-slate-400">No videos yet.</div>'
+                    : '<div class="px-5 py-4 text-sm text-slate-400">No results match your filter.</div>';
+                return;
+            }
+
+            const table = document.createElement('div');
+            table.className = 'divide-y divide-slate-800 text-sm';
+            filtered.forEach((file, index) => {
+                const watchLink = `<span class="text-slate-600">|</span><a href="/watch?file=${encodeURIComponent(file.name)}" target="_blank" class="text-slate-400 hover:text-blue-400 text-xs">watch</a>`;
+                const row = buildFileRow(
+                    file,
+                    `deleteFile('${file.name.replace(/'/g, "\\'")}', this)`,
+                    `/downloads/${encodeURIComponent(file.name)}`,
+                    watchLink
+                );
+                table.appendChild(row);
+                if (highlightNewest && index === 0) {
+                    row.style.transition = 'background-color 0.2s ease';
+                    row.style.backgroundColor = '#1e40af33';
+                    setTimeout(() => { if (row.parentNode) row.style.backgroundColor = ''; }, 2800);
+                }
+            });
+            container.appendChild(table);
+        }
+
+        function renderTranscripts(highlightNewest = false) {
+            const container = document.getElementById('transcripts-list');
+            const q = document.getElementById('transcripts-search')?.value || '';
+            const sort = document.getElementById('transcripts-sort')?.value || 'date-desc';
+            const filtered = applySortFilter(allTranscripts, q, sort);
+
+            container.innerHTML = '';
+            if (filtered.length === 0) {
+                container.innerHTML = allTranscripts.length === 0
+                    ? '<div class="px-5 py-4 text-sm text-slate-400">No transcripts yet.</div>'
+                    : '<div class="px-5 py-4 text-sm text-slate-400">No results match your filter.</div>';
+                return;
+            }
+
+            const table = document.createElement('div');
+            table.className = 'divide-y divide-slate-800 text-sm';
+            filtered.forEach((file, index) => {
+                const row = buildFileRow(
+                    file,
+                    `deleteTranscript('${file.name.replace(/'/g, "\\'")}', this)`,
+                    `/transcripts/${encodeURIComponent(file.name)}`,
+                    ''
+                );
+                table.appendChild(row);
+                if (highlightNewest && index === 0) {
+                    row.style.transition = 'background-color 0.2s ease';
+                    row.style.backgroundColor = '#3b0764aa';
+                    setTimeout(() => { if (row.parentNode) row.style.backgroundColor = ''; }, 2800);
+                }
+            });
+            container.appendChild(table);
+        }
+
+        async function refreshFiles(highlightNewest = false) {
+            const res = await fetch('/api/files');
+            const data = await res.json();
+            allFiles = data.files || [];
+            renderFiles(highlightNewest);
+        }
+
+        async function refreshTranscripts(highlightNewest = false) {
+            const res = await fetch('/api/transcripts');
+            const data = await res.json();
+            allTranscripts = data.files || [];
+            renderTranscripts(highlightNewest);
+        }
+
+        async function refreshDiskUsage() {
+            try {
+                const res = await fetch('/api/disk');
+                const data = await res.json();
+
+                const section = document.getElementById('disk-section');
+                const pct = data.disk_total > 0 ? (data.disk_used / data.disk_total * 100) : 0;
+                const fill = document.getElementById('disk-bar-fill');
+                const label = document.getElementById('disk-label');
+                const numbers = document.getElementById('disk-numbers');
+                const breakdown = document.getElementById('disk-breakdown');
+
+                fill.style.width = pct.toFixed(1) + '%';
+
+                // Color the bar based on usage
+                fill.className = 'disk-bar-fill ' + (pct > 85 ? 'bg-red-500' : pct > 65 ? 'bg-amber-500' : 'bg-blue-600');
+
+                label.textContent = `Disk ${pct.toFixed(0)}% used`;
+                numbers.textContent = `${formatBytes(data.disk_free)} free of ${formatBytes(data.disk_total)}`;
+
+                const parts = [];
+                if (data.downloads_bytes > 0) parts.push(`Videos: ${formatBytes(data.downloads_bytes)}`);
+                if (data.transcripts_bytes > 0) parts.push(`Transcripts: ${formatBytes(data.transcripts_bytes)}`);
+                breakdown.textContent = parts.join('  ·  ');
+
+                section.classList.remove('hidden');
+            } catch (e) {
+                // Non-critical — silently ignore
+            }
+        }
+
+        async function deleteFile(filename, btn) {
+            if (!confirm(`Delete ${filename}?`)) return;
+            try {
+                await fetch(`/api/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+                refreshFiles();
+                refreshDiskUsage();
+            } catch (e) { alert('Failed to delete'); }
+        }
+
+        async function deleteTranscript(filename, btn) {
+            if (!confirm(`Delete ${filename}?`)) return;
+            try {
+                await fetch(`/api/transcripts/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+                refreshTranscripts();
+                refreshDiskUsage();
+            } catch (e) { alert('Failed to delete'); }
+        }
+
+        function indicateListDownload(linkEl) {
+            const orig = linkEl.textContent;
+            linkEl.textContent = 'downloading...';
+            setTimeout(() => { if (linkEl.parentNode) linkEl.textContent = orig; }, 2500);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('url-input').addEventListener('keypress', e => {
+                if (e.key === 'Enter') analyzeVideo();
+            });
+            refreshFiles();
+            refreshTranscripts();
+            refreshDiskUsage();
+        });
+    </script>
+</body>
+</html>
