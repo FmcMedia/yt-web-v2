@@ -1,11 +1,18 @@
 services:
   yt-web:
     build: .
+    container_name: yt-web
     ports:
       - "8000:8000"
     volumes:
-      - ./downloads:/app/downloads
-      - ./transcripts:/app/transcripts
+      - yt-web-downloads:/app/downloads
+      - yt-web-transcripts:/app/transcripts
+      - yt-web-history:/app/history
     environment:
       - STORAGE_LIMIT_GB=20
     restart: unless-stopped
+
+volumes:
+  yt-web-downloads:
+  yt-web-transcripts:
+  yt-web-history:

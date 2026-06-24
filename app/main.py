@@ -22,7 +22,9 @@ BASE_DIR = Path(__file__).parent
 DOWNLOADS_DIR = BASE_DIR / "downloads"
 TRANSCRIPTS_DIR = BASE_DIR / "transcripts"
 TEMPLATES_DIR = BASE_DIR / "templates"
-HISTORY_FILE = BASE_DIR / "history.json"
+HISTORY_DIR = BASE_DIR / "history"
+HISTORY_DIR.mkdir(exist_ok=True)
+HISTORY_FILE = HISTORY_DIR / "history.json"
 
 DOWNLOADS_DIR.mkdir(exist_ok=True)
 TRANSCRIPTS_DIR.mkdir(exist_ok=True)
