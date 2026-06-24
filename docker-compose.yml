@@ -2,6 +2,8 @@ services:
   yt-web:
     build: .
     container_name: yt-web
+    ports:
+      - "8000:8000"
     volumes:
       - yt-web-downloads:/app/downloads
       - yt-web-transcripts:/app/transcripts
@@ -10,22 +12,22 @@ services:
       - STORAGE_LIMIT_GB=20
     restart: unless-stopped
 
-  caddy:
-    image: caddy:2-alpine
-    container_name: yt-web-caddy
-    ports:
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - yt-web-caddy-data:/data
-      - yt-web-caddy-config:/config
-    depends_on:
-      - yt-web
-    restart: unless-stopped
+  # caddy:
+  #   image: caddy:2-alpine
+  #   container_name: yt-web-caddy
+  #   ports:
+  #     - "443:443"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile:ro
+  #     - yt-web-caddy-data:/data
+  #     - yt-web-caddy-config:/config
+  #   depends_on:
+  #     - yt-web
+  #   restart: unless-stopped
 
 volumes:
   yt-web-downloads:
   yt-web-transcripts:
   yt-web-history:
-  yt-web-caddy-data:
-  yt-web-caddy-config:
+  # yt-web-caddy-data:
+  # yt-web-caddy-config:
