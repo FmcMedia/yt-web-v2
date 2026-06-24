@@ -118,9 +118,9 @@
     </div>
     <!-- Top Nav -->
     <nav class="border-b border-slate-800 bg-slate-900">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-x-3">
-                <div class="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center">
+                <div class="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
                     <i class="fa-solid fa-download text-white text-xl"></i>
                 </div>
                 <div>
@@ -128,50 +128,54 @@
                     <span class="text-xs text-slate-500 ml-1">beta</span>
                 </div>
             </div>
-            <div class="flex items-center gap-x-4 text-sm">
-                <div class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-2xl text-xs flex items-center gap-x-1.5">
-                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span class="text-emerald-400 font-medium">DRM-Free Mode</span>
+            <div class="flex items-center">
+                <div class="px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-2xl text-xs flex items-center gap-x-1.5">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse flex-shrink-0"></div>
+                    <span class="text-emerald-400 font-medium hidden sm:inline">DRM-Free Mode</span>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-5xl mx-auto px-6 py-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
 
         <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-4xl font-semibold tracking-tighter">Download YouTube videos</h1>
-            <p class="mt-2 text-slate-400 max-w-md">Fast, clean downloads for DRM-free content. No ads. No tracking.</p>
+        <div class="mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-4xl font-semibold tracking-tighter">Download YouTube videos</h1>
+            <p class="mt-1.5 text-slate-400 text-sm sm:text-base max-w-md">Fast, clean downloads for DRM-free content. No ads. No tracking.</p>
         </div>
 
         <!-- URL Input -->
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 mb-8">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 mb-6 sm:mb-8">
             <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5 tracking-widest">YOUTUBE URL</label>
-                <div class="flex gap-3 items-center">
+                <div class="flex gap-2 sm:gap-3 items-center">
                     <input id="url-input"
-                           type="text"
+                           type="url"
+                           inputmode="url"
+                           autocomplete="off"
+                           autocorrect="off"
+                           autocapitalize="off"
                            placeholder="https://www.youtube.com/watch?v=..."
-                           class="flex-1 bg-slate-950 border border-slate-700 focus:border-blue-500 transition-colors rounded-2xl px-4 py-3 text-sm font-mono placeholder:text-slate-500">
+                           class="flex-1 bg-slate-950 border border-slate-700 focus:border-blue-500 transition-colors rounded-2xl px-4 py-3 text-sm font-mono placeholder:text-slate-500 min-w-0">
                     <button id="analyze-btn" onclick="analyzeVideo()"
-                            class="bg-white hover:bg-slate-100 active:bg-white transition-all text-slate-900 font-semibold px-8 h-12 rounded-2xl flex items-center justify-center gap-x-2 text-sm shadow-sm flex-shrink-0">
+                            class="bg-white hover:bg-slate-100 active:bg-slate-200 transition-all text-slate-900 font-semibold px-5 sm:px-8 h-12 rounded-2xl flex items-center justify-center gap-x-2 text-sm shadow-sm flex-shrink-0">
                         <i class="fa-solid fa-search"></i>
                         <span class="font-semibold">Analyze</span>
                     </button>
                 </div>
             </div>
             <div id="analyze-error" class="hidden mt-3 text-red-400 text-sm flex items-center gap-x-2">
-                <i class="fa-solid fa-exclamation-circle"></i>
+                <i class="fa-solid fa-exclamation-circle flex-shrink-0"></i>
                 <span></span>
             </div>
         </div>
 
         <!-- Video Preview (hidden until analyzed) -->
-        <div id="preview-section" class="hidden mb-8">
+        <div id="preview-section" class="hidden mb-6 sm:mb-8">
             <div class="yt-card bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden">
-                <div class="p-6">
-                    <div class="flex flex-col lg:flex-row gap-6">
+                <div class="p-4 sm:p-6">
+                    <div class="flex flex-col lg:flex-row gap-4 sm:gap-6">
 
                         <!-- Thumbnail -->
                         <div class="w-full lg:w-80 flex-shrink-0">
@@ -182,19 +186,19 @@
 
                         <!-- Metadata -->
                         <div class="flex-1 min-w-0">
-                            <div id="video-title" class="text-2xl font-semibold tracking-tight leading-tight mb-1"></div>
-                            <div class="flex items-center gap-x-3 text-sm text-slate-400 mb-4">
+                            <div id="video-title" class="text-lg sm:text-2xl font-semibold tracking-tight leading-tight mb-1"></div>
+                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-slate-400 mb-3 sm:mb-4">
                                 <div id="video-uploader"></div>
                                 <div class="w-1 h-1 bg-slate-600 rounded-full"></div>
                                 <div id="video-duration"></div>
-                                <div class="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div id="video-views"></div>
+                                <div class="w-1 h-1 bg-slate-600 rounded-full hidden sm:block"></div>
+                                <div id="video-views" class="hidden sm:block"></div>
                             </div>
 
                             <!-- DRM Warning -->
                             <div id="drm-warning" class="hidden mb-4 bg-red-950 border border-red-900 text-red-400 text-sm rounded-2xl px-4 py-3">
                                 <div class="flex gap-x-3 items-start">
-                                    <i class="fa-solid fa-shield-halved mt-0.5"></i>
+                                    <i class="fa-solid fa-shield-halved mt-0.5 flex-shrink-0"></i>
                                     <div>
                                         <div class="font-semibold">DRM-protected content detected</div>
                                         <div class="text-xs mt-0.5">This video only offers protected or image formats. Download is disabled.</div>
@@ -205,7 +209,7 @@
                             <!-- Format Selection -->
                             <div>
                                 <div class="section-header mb-2">QUALITY &amp; FORMAT</div>
-                                <div class="space-y-1 max-h-[210px] overflow-auto pr-1" id="format-list">
+                                <div class="space-y-1 max-h-48 sm:max-h-[210px] overflow-auto pr-1" id="format-list">
                                     <!-- Populated by JS -->
                                 </div>
                             </div>
@@ -214,8 +218,8 @@
                 </div>
 
                 <!-- Download Controls -->
-                <div class="border-t border-slate-800 px-6 py-5 bg-slate-950 flex flex-col sm:flex-row items-center gap-4">
-                    <div id="video-options" class="flex items-center gap-x-3 flex-1">
+                <div class="border-t border-slate-800 px-4 sm:px-6 py-4 sm:py-5 bg-slate-950 flex flex-col gap-3">
+                    <div id="video-options" class="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <label class="flex items-center gap-x-2 cursor-pointer text-sm">
                             <input type="checkbox" id="subtitles" class="accent-blue-600">
                             <span class="text-slate-300">Subtitles (if available)</span>
@@ -225,26 +229,28 @@
                             <span class="text-slate-300">Embed thumbnail</span>
                         </label>
                     </div>
-                    <button onclick="startDownload()"
-                            id="download-btn"
-                            class="bg-blue-600 hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-7 py-2.5 rounded-2xl flex items-center gap-x-2 text-sm">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Download</span>
-                    </button>
-                    <span id="download-status" class="ml-3 text-sm text-slate-400"></span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="startDownload()"
+                                id="download-btn"
+                                class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-7 py-3 rounded-2xl flex items-center gap-x-2 text-sm w-full sm:w-auto justify-center">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download</span>
+                        </button>
+                        <span id="download-status" class="text-sm text-slate-400"></span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Active Downloads -->
-        <div id="active-section" class="hidden mb-8">
+        <div id="active-section" class="hidden mb-6 sm:mb-8">
             <div class="section-header mb-3 px-1">ACTIVE DOWNLOADS</div>
             <div id="active-downloads" class="space-y-3"></div>
         </div>
 
         <!-- Disk Usage -->
-        <div id="disk-section" class="mb-8 hidden">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-x-4">
+        <div id="disk-section" class="mb-6 sm:mb-8 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl px-4 sm:px-5 py-3 flex items-center gap-x-3 sm:gap-x-4">
                 <i class="fa-solid fa-hard-drive text-slate-500 text-sm flex-shrink-0"></i>
                 <div class="flex-1 min-w-0">
                     <div class="flex justify-between text-xs text-slate-400 mb-1.5">
@@ -260,7 +266,7 @@
         </div>
 
         <!-- Completed Videos -->
-        <div class="mb-8">
+        <div class="mb-6 sm:mb-8">
             <div class="flex items-center justify-between mb-2 px-1">
                 <div class="section-header">COMPLETED VIDEOS</div>
                 <button onclick="refreshFiles()"
@@ -269,12 +275,12 @@
                     <span>Refresh</span>
                 </button>
             </div>
-            <div class="flex gap-2 mb-3">
+            <div class="flex flex-col sm:flex-row gap-2 mb-3">
                 <input id="files-search" type="text" placeholder="Filter by name..."
                        oninput="renderFiles()"
-                       class="flex-1 bg-slate-900 border border-slate-800 focus:border-slate-600 transition-colors rounded-xl px-3 py-1.5 text-xs text-slate-300 placeholder:text-slate-600 outline-none">
+                       class="flex-1 bg-slate-900 border border-slate-800 focus:border-slate-600 transition-colors rounded-xl px-3 py-2 text-xs text-slate-300 placeholder:text-slate-600 outline-none">
                 <select id="files-sort" onchange="renderFiles()"
-                        class="bg-slate-900 border border-slate-800 text-slate-400 text-xs rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                        class="bg-slate-900 border border-slate-800 text-slate-400 text-xs rounded-xl px-3 py-2 outline-none cursor-pointer">
                     <option value="date-desc">Newest first</option>
                     <option value="date-asc">Oldest first</option>
                     <option value="name-asc">Name A→Z</option>
@@ -287,7 +293,7 @@
         </div>
 
         <!-- Completed Transcripts -->
-        <div class="mb-8">
+        <div class="mb-6 sm:mb-8">
             <div class="flex items-center justify-between mb-2 px-1">
                 <div class="section-header">COMPLETED TRANSCRIPTS</div>
                 <button onclick="refreshTranscripts()"
@@ -296,12 +302,12 @@
                     <span>Refresh</span>
                 </button>
             </div>
-            <div class="flex gap-2 mb-3">
+            <div class="flex flex-col sm:flex-row gap-2 mb-3">
                 <input id="transcripts-search" type="text" placeholder="Filter by name..."
                        oninput="renderTranscripts()"
-                       class="flex-1 bg-slate-900 border border-slate-800 focus:border-slate-600 transition-colors rounded-xl px-3 py-1.5 text-xs text-slate-300 placeholder:text-slate-600 outline-none">
+                       class="flex-1 bg-slate-900 border border-slate-800 focus:border-slate-600 transition-colors rounded-xl px-3 py-2 text-xs text-slate-300 placeholder:text-slate-600 outline-none">
                 <select id="transcripts-sort" onchange="renderTranscripts()"
-                        class="bg-slate-900 border border-slate-800 text-slate-400 text-xs rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                        class="bg-slate-900 border border-slate-800 text-slate-400 text-xs rounded-xl px-3 py-2 outline-none cursor-pointer">
                     <option value="date-desc">Newest first</option>
                     <option value="date-asc">Oldest first</option>
                     <option value="name-asc">Name A→Z</option>
@@ -313,7 +319,7 @@
             <div id="transcripts-list" class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden"></div>
         </div>
 
-        <div class="mt-4 text-center">
+        <div class="mt-4 text-center pb-6">
             <div class="text-[10px] text-slate-500">
                 Only works with DRM-free content. You are responsible for respecting copyright and YouTube's Terms of Service.
             </div>
