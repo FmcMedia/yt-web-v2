@@ -27,7 +27,7 @@ HISTORY_FILE = BASE_DIR / "history.json"
 DOWNLOADS_DIR.mkdir(exist_ok=True)
 TRANSCRIPTS_DIR.mkdir(exist_ok=True)
 
-STORAGE_LIMIT_BYTES = int(os.environ.get("STORAGE_LIMIT_GB", 20)) * 1024 ** 3
+STORAGE_LIMIT_BYTES = int(float(os.environ.get("STORAGE_LIMIT_GB", 20)) * 1024 ** 3)
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
