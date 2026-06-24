@@ -151,6 +151,11 @@ yt-web-v2/
 
 ## Changelog
 
+### v2.3.1 (2026-06-23)
+- Fixed transcript downloads not working in Docker — yt-dlp Python API option is `writeautomaticsub` (not `writeautomaticsubs`); the wrong name silently skipped subtitle downloads
+- Added Node.js to Docker image for yt-dlp JS runtime support
+- Added yt-dlp config file in container to register Node.js as the JS runtime
+
 ### v2.3 (2026-06-23)
 - Storage limit enforcement — downloads check available space before starting
 - If limit would be exceeded, an interactive modal prompts the user to select files to delete before proceeding
