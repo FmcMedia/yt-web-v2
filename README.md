@@ -42,9 +42,21 @@ cd yt-web-v2
 docker compose up --build
 ```
 
-Open **http://localhost:8080**
+Open **https://your-server-ip** (Caddy handles HTTPS automatically).
 
-Downloaded files are persisted to `./downloads` on your host machine via volume mount.
+Downloaded files are persisted in named Docker volumes.
+
+### HTTPS + PWA on Android
+
+The included Caddy reverse proxy provides HTTPS via a local self-signed certificate, which is required for Android to install the app properly (not just a Chrome shortcut).
+
+**One-time Android setup:**
+
+1. Edit `Caddyfile` — replace `192.168.1.2` with your server's actual local IP
+2. Deploy with `docker compose up --build -d`
+3. On Android, open `http://your-server-ip/caddy-root.crt` in Chrome — it will download a certificate file
+4. Open Android **Settings → Security → Install a certificate → CA certificate** and install it
+5. Now open `https://your-server-ip` in Chrome → three-dot menu → **Add to Home Screen** — installs as a real app
 
 ### Without Docker
 
@@ -150,6 +162,12 @@ yt-web-v2/
 ---
 
 ## Changelog
+
+### v2.6 (2026-06-24)
+- Added Caddy reverse proxy for HTTPS on local network — required for PWA to install as a real app (not a Chrome shortcut) on Android
+- Caddy uses its internal CA to issue a self-signed cert for the server's local IP
+- HTTP on port 80 serves the Caddy root CA cert at `/caddy-root.crt` for easy Android installation
+- yt-web no longer exposes port 8000 to the host; all traffic goes through Caddy on 443
 
 ### v2.5 (2026-06-24)
 - PWA (Progressive Web App) support — installable on Android and iOS via "Add to Home Screen"

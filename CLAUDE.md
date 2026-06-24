@@ -62,6 +62,8 @@ DOCKER_HOST="unix://${HOME}/.colima/default/docker.sock" docker compose -f ~/yt-
 
 **Portainer:** Stack pulls from GitHub `main` branch. Use "Re-pull image and redeploy" — don't manually delete containers.
 
+**Caddy / HTTPS:** `Caddyfile` has the server IP hardcoded (`192.168.1.2`). Change it if the server IP changes. Caddy root CA cert is served at `http://<ip>/caddy-root.crt` for Android installation. Caddy data lives in `yt-web-caddy-data` named volume.
+
 ---
 
 ## Key Gotchas
@@ -80,4 +82,4 @@ Tag each release: `git tag vX.Y && git push origin main --tags`
 Update `README.md` changelog with each version.  
 Version displayed in page footer (hardcoded in `index.html`).
 
-Current version: **v2.5**
+Current version: **v2.6**
