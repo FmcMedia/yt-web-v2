@@ -1,16 +1,12 @@
-# HTTP — only used to serve the root CA cert for Android installation
-http://192.168.1.2 {
+https://192.168.1.2 {
+    tls internal
+
+    # Serve Caddy root CA cert for Android installation
     handle /caddy-root.crt {
         root * /data/caddy/pki/authorities/local
         rewrite * /root.crt
         file_server
     }
-    redir https://{host}{uri} permanent
-}
-
-# HTTPS — self-signed cert from Caddy's internal CA
-https://192.168.1.2 {
-    tls internal
 
     reverse_proxy yt-web:8000
 }
