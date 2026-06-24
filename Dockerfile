@@ -1,9 +1,9 @@
+FROM mwader/static-ffmpeg:latest AS ffmpeg
+
 FROM python:3.12-slim
 
-# Install ffmpeg and clean up in one layer
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+# Copy static ffmpeg binary (no apt install needed)
+COPY --from=ffmpeg /ffmpeg /usr/local/bin/ffmpeg
 
 # Non-root user
 RUN useradd -m -u 1000 appuser
