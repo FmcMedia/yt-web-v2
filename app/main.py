@@ -161,8 +161,20 @@ async def get_info(url: str):
 
     formats = info.get("formats", [])
 
+    def fmt_size(f):
+        return f.get("filesize") or f.get("filesize_approx")
+
+    # Best audio size for merging estimates
+    audio_formats = [f for f in formats if f.get("acodec", "none") != "none" and f.get("vcodec", "none") == "none"]
+    best_audio_size = max((fmt_size(f) or 0 for f in audio_formats), default=0)
+
+    # Best overall size (for "best" option)
+    all_video = [f for f in formats if f.get("vcodec", "none") != "none"]
+    best_video_size = max((fmt_size(f) or 0 for f in all_video), default=0)
+
     download_options = [
-        {"value": "best", "label": "Best quality available"},
+        {"value": "best", "label": "Best quality available",
+         "filesize_estimate": (best_video_size + best_audio_size) or None},
     ]
 
     video_heights = sorted(
@@ -172,17 +184,23 @@ async def get_info(url: str):
 
     for h in video_heights:
         if h >= 144:
+            height_formats = [f for f in formats if f.get("height") == h and f.get("vcodec", "none") != "none"]
+            best_at_height = max((fmt_size(f) or 0 for f in height_formats), default=0)
+            estimate = (best_at_height + best_audio_size) or None
             download_options.append({
                 "value": f"bestvideo[height<={h}]+bestaudio/best",
-                "label": f"{h}p"
+                "label": f"{h}p",
+                "filesize_estimate": estimate,
             })
 
-    download_options.append({"value": "bestaudio/best", "label": "Audio only (best)"})
+    audio_size = max((fmt_size(f) or 0 for f in audio_formats), default=0) or None
+    download_options.append({"value": "bestaudio/best", "label": "Audio only (best)", "filesize_estimate": audio_size})
 
     has_subs = bool(info.get("subtitles") or info.get("automatic_captions"))
     download_options.append({
         "value": "transcript",
         "label": "Transcript only (English)" + ("" if has_subs else " — may not be available"),
+        "filesize_estimate": None,
     })
 
     drm_detected = is_drm_protected(info, formats)

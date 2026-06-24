@@ -81,6 +81,41 @@
     </style>
 </head>
 <body class="bg-slate-950 text-slate-200">
+
+    <!-- Storage Limit Modal -->
+    <div id="storage-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeStorageModal()"></div>
+        <div class="relative bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg shadow-2xl">
+            <div class="px-6 pt-6 pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-x-3 mb-1">
+                    <div class="w-8 h-8 bg-amber-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
+                    </div>
+                    <h2 class="font-semibold text-base">Not enough storage</h2>
+                </div>
+                <p class="text-sm text-slate-400 mt-2" id="storage-modal-desc"></p>
+            </div>
+            <div class="px-6 py-3 border-b border-slate-800">
+                <div class="text-xs text-slate-500 mb-2 uppercase tracking-widest">Select files to delete</div>
+                <div id="storage-modal-files" class="space-y-1 max-h-64 overflow-y-auto pr-1"></div>
+            </div>
+            <div class="px-6 py-4 flex items-center justify-between gap-4">
+                <div class="text-xs text-slate-400" id="storage-modal-freed"></div>
+                <div class="flex gap-2">
+                    <button onclick="closeStorageModal()"
+                            class="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="storage-modal-confirm"
+                            onclick="confirmStorageDelete()"
+                            disabled
+                            class="px-5 py-2 text-sm font-semibold bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl transition-colors">
+                        Delete &amp; Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Top Nav -->
     <nav class="border-b border-slate-800 bg-slate-900">
         <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -288,7 +323,12 @@
     <script>
         let currentVideoData = null;
         let selectedFormatValue = null;
+        let selectedFormatSize = null;   // filesize_estimate in bytes or null
         const pollIntervals = new Map();
+
+        // Storage modal state
+        let storageModalFiles = [];      // [{name, size, type}] — type: 'video'|'transcript'
+        let storageNeeded = 0;
 
         function formatBytes(bytes) {
             if (!bytes) return '';
@@ -403,6 +443,7 @@
                     });
                     div.classList.add('selected', 'border-blue-600');
                     selectedFormatValue = opt.value;
+                    selectedFormatSize = opt.filesize_estimate ?? null;
 
                     document.getElementById('video-options').style.opacity = isTranscript ? '0.3' : '1';
                     document.getElementById('video-options').style.pointerEvents = isTranscript ? 'none' : '';
@@ -413,11 +454,40 @@
                 if (index === 0) {
                     div.classList.add('selected', 'border-blue-600');
                     selectedFormatValue = opt.value;
+                    selectedFormatSize = opt.filesize_estimate ?? null;
                 }
             });
         }
 
         async function startDownload() {
+            const url = document.getElementById('url-input').value.trim();
+            if (!url || !currentVideoData) return;
+
+            // Check storage before starting
+            try {
+                const diskRes = await fetch('/api/disk');
+                const disk = await diskRes.json();
+                const SAFETY_BUFFER = 100 * 1024 * 1024; // 100MB buffer
+
+                const needed = selectedFormatSize || 0;
+                const free = disk.storage_free;
+
+                // Block if: we know the size and it won't fit, OR free space is critically low
+                const wouldExceed = needed > 0 && needed > free;
+                const criticallyLow = free < SAFETY_BUFFER && selectedFormatValue !== 'transcript';
+
+                if (wouldExceed || criticallyLow) {
+                    await showStorageModal(disk, needed);
+                    return;
+                }
+            } catch (e) {
+                // Non-critical — proceed if disk check fails
+            }
+
+            await executeDownload();
+        }
+
+        async function executeDownload() {
             const url = document.getElementById('url-input').value.trim();
             if (!url || !currentVideoData) return;
 
@@ -452,6 +522,103 @@
                 btn.disabled = false;
                 statusSpan.textContent = '';
             }
+        }
+
+        async function showStorageModal(disk, needed) {
+            storageNeeded = needed;
+
+            // Fetch all files
+            const [videosRes, transcriptsRes] = await Promise.all([
+                fetch('/api/files'),
+                fetch('/api/transcripts'),
+            ]);
+            const videos = (await videosRes.json()).files || [];
+            const transcripts = (await transcriptsRes.json()).files || [];
+
+            storageModalFiles = [
+                ...videos.map(f => ({ ...f, type: 'video' })),
+                ...transcripts.map(f => ({ ...f, type: 'transcript' })),
+            ].sort((a, b) => b.size - a.size);
+
+            // Description
+            const descEl = document.getElementById('storage-modal-desc');
+            if (needed > 0) {
+                descEl.innerHTML = `This download needs approximately <strong>${formatBytes(needed)}</strong> but only <strong>${formatBytes(disk.storage_free)}</strong> is available within the 20 GB limit. Select files below to delete and make room.`;
+            } else {
+                descEl.innerHTML = `Storage is nearly full — only <strong>${formatBytes(disk.storage_free)}</strong> remaining. Select files to delete before continuing.`;
+            }
+
+            // File list
+            const listEl = document.getElementById('storage-modal-files');
+            listEl.innerHTML = '';
+
+            if (storageModalFiles.length === 0) {
+                listEl.innerHTML = '<div class="text-sm text-slate-400 py-2">No files to delete.</div>';
+            } else {
+                storageModalFiles.forEach((file, i) => {
+                    const icon = file.type === 'transcript' ? 'fa-file-lines text-violet-400' : 'fa-file-video text-slate-400';
+                    const row = document.createElement('label');
+                    row.className = 'flex items-center gap-x-3 px-3 py-2.5 rounded-2xl hover:bg-slate-800 cursor-pointer transition-colors';
+                    row.innerHTML = `
+                        <input type="checkbox" data-index="${i}" class="storage-file-cb accent-red-500 flex-shrink-0" onchange="updateStorageModalFreed()">
+                        <i class="fa-solid ${icon} text-xs flex-shrink-0"></i>
+                        <span class="text-sm truncate flex-1">${file.name}</span>
+                        <span class="text-xs text-slate-400 tabular-nums flex-shrink-0">${formatBytes(file.size)}</span>
+                    `;
+                    listEl.appendChild(row);
+                });
+            }
+
+            updateStorageModalFreed();
+            document.getElementById('storage-modal').classList.remove('hidden');
+        }
+
+        function updateStorageModalFreed() {
+            const checkboxes = document.querySelectorAll('.storage-file-cb:checked');
+            let freed = 0;
+            checkboxes.forEach(cb => {
+                freed += storageModalFiles[parseInt(cb.dataset.index)].size;
+            });
+
+            const freedEl = document.getElementById('storage-modal-freed');
+            const confirmBtn = document.getElementById('storage-modal-confirm');
+            const enough = storageNeeded > 0 ? freed >= storageNeeded : freed > 0;
+
+            freedEl.textContent = freed > 0 ? `Deleting selected frees ${formatBytes(freed)}` : 'Select files to delete';
+            freedEl.className = 'text-xs ' + (enough ? 'text-emerald-400' : 'text-slate-400');
+            confirmBtn.disabled = !enough;
+        }
+
+        function closeStorageModal() {
+            document.getElementById('storage-modal').classList.add('hidden');
+            storageModalFiles = [];
+            storageNeeded = 0;
+        }
+
+        async function confirmStorageDelete() {
+            const confirmBtn = document.getElementById('storage-modal-confirm');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Deleting...';
+
+            const checkboxes = document.querySelectorAll('.storage-file-cb:checked');
+            const toDelete = Array.from(checkboxes).map(cb => storageModalFiles[parseInt(cb.dataset.index)]);
+
+            for (const file of toDelete) {
+                const endpoint = file.type === 'transcript'
+                    ? `/api/transcripts/${encodeURIComponent(file.name)}`
+                    : `/api/files/${encodeURIComponent(file.name)}`;
+                try {
+                    await fetch(endpoint, { method: 'DELETE' });
+                } catch (e) {
+                    console.error('Failed to delete', file.name, e);
+                }
+            }
+
+            closeStorageModal();
+            refreshFiles();
+            refreshTranscripts();
+            refreshDiskUsage();
+            await executeDownload();
         }
 
         async function cancelDownload(jobId) {
