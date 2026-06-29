@@ -64,6 +64,29 @@ On another Revit 2025 computer:
 
 No Git, Visual Studio, or .NET SDK is required on the target computer when using the portable ZIP.
 
+## Push changes to GitHub when logged in
+
+Use these commands when you are on the source/build machine and Git is already logged in.
+
+Check that Git can reach GitHub:
+
+```powershell
+cd C:\revit-navfac-tools
+git pull
+```
+
+Commit and push normal source/documentation changes:
+
+```powershell
+cd C:\revit-navfac-tools
+git status
+git add .
+git commit -m "Update NAVFAC Tools"
+git push
+```
+
+If there is nothing to commit, Git will say something like `nothing to commit, working tree clean`. That is fine.
+
 ## Optional: publish the ZIP into GitHub
 
 Use this only when the build machine is logged into Git and you want the ZIP committed to the repo:
@@ -78,6 +101,19 @@ This creates and pushes:
 
 ```text
 revit-navfac-tools/release/NAVFACTools-Revit2025-Portable.zip
+```
+
+Manual version of the same push process:
+
+```powershell
+cd C:\revit-navfac-tools
+git pull
+powershell -ExecutionPolicy Bypass -File .\package.ps1
+mkdir release -Force
+copy .\dist\NAVFACTools-Revit2025-Portable.zip .\release\NAVFACTools-Revit2025-Portable.zip
+git add .\release\NAVFACTools-Revit2025-Portable.zip
+git commit -m "Add portable NAVFAC Tools installer ZIP"
+git push
 ```
 
 If you only want a local ZIP to copy to a thumb drive, use `package.ps1` instead.
