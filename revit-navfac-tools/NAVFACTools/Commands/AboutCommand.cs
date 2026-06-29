@@ -3,6 +3,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using System;
 using System.Reflection;
+using RevitTaskDialog = Autodesk.Revit.UI.TaskDialog;
 
 namespace NAVFACTools.Commands;
 
@@ -14,7 +15,7 @@ public sealed class AboutCommand : IExternalCommand
         Version? version = Assembly.GetExecutingAssembly().GetName().Version;
         string assemblyPath = Assembly.GetExecutingAssembly().Location;
 
-        TaskDialog.Show(
+        RevitTaskDialog.Show(
             "NAVFAC Tools",
             "NAVFAC Tools for Revit 2025\n\n" +
             $"Version: {version}\n" +
