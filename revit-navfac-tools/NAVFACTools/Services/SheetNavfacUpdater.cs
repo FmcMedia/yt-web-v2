@@ -15,7 +15,7 @@ public sealed class SheetNavfacUpdater
         _document = document ?? throw new ArgumentNullException(nameof(document));
     }
 
-    public ImportReport Update(IReadOnlyList<DrawingIndexRow> csvRows, string targetParameterName)
+    public ImportReport Update(IReadOnlyList<DrawingIndexRow> csvRows, string targetParameterName, string drawingNumberParameterName)
     {
         if (string.IsNullOrWhiteSpace(targetParameterName))
             throw new ArgumentException("Target parameter name is blank.", nameof(targetParameterName));
@@ -77,44 +77,10 @@ public sealed class SheetNavfacUpdater
                 if (!sheets.TryGetValue(sheetNumber, out ViewSheet? sheet))
                     continue;
 
-                Parameter? parameter = sheet.LookupParameter(targetParameterName);
-                if (parameter is null)
-                {
-                    report.MissingTargetParameter.Add(sheetNumber);
-                    continue;
-                }
+                UpdateStringParameter(sheet, sheetNumber, targetParameterName, row.NavfacDrawingNumber, report, "NAVFAC");
 
-                if (parameter.IsReadOnly)
-                {
-                    report.SkippedLockedOrReadOnlyCount++;
-                    continue;
-                }
-
-                if (parameter.StorageType != StorageType.String)
-                {
-                    report.FailedUpdates.Add($"{sheetNumber}: parameter is {parameter.StorageType}, expected String");
-                    continue;
-                }
-
-                string oldValue = parameter.AsString() ?? string.Empty;
-                string newValue = row.NavfacDrawingNumber.Trim();
-
-                if (string.Equals(oldValue.Trim(), newValue, StringComparison.OrdinalIgnoreCase))
-                {
-                    report.UnchangedCount++;
-                    continue;
-                }
-
-                bool success = parameter.Set(newValue);
-                if (success)
-                {
-                    report.UpdatedCount++;
-                    report.ChangedLines.Add($"{sheetNumber}: '{oldValue}' → '{newValue}'");
-                }
-                else
-                {
-                    report.FailedUpdates.Add(sheetNumber);
-                }
+                if (!string.IsNullOrWhiteSpace(drawingNumberParameterName) && !string.IsNullOrWhiteSpace(row.DrawingNumber))
+                    UpdateStringParameter(sheet, sheetNumber, drawingNumberParameterName, row.DrawingNumber!, report, "NO");
             }
 
             transaction.Commit();
@@ -126,5 +92,47 @@ public sealed class SheetNavfacUpdater
         }
 
         return report;
+    }
+
+    private static void UpdateStringParameter(ViewSheet sheet, string sheetNumber, string parameterName, string newValueRaw, ImportReport report, string label)
+    {
+        Parameter? parameter = sheet.LookupParameter(parameterName);
+        if (parameter is null)
+        {
+            report.MissingTargetParameter.Add($"{sheetNumber}: {parameterName}");
+            return;
+        }
+
+        if (parameter.IsReadOnly)
+        {
+            report.SkippedLockedOrReadOnlyCount++;
+            return;
+        }
+
+        if (parameter.StorageType != StorageType.String)
+        {
+            report.FailedUpdates.Add($"{sheetNumber}: {parameterName} is {parameter.StorageType}, expected String");
+            return;
+        }
+
+        string oldValue = parameter.AsString() ?? string.Empty;
+        string newValue = newValueRaw.Trim();
+
+        if (string.Equals(oldValue.Trim(), newValue, StringComparison.OrdinalIgnoreCase))
+        {
+            report.UnchangedCount++;
+            return;
+        }
+
+        bool success = parameter.Set(newValue);
+        if (success)
+        {
+            report.UpdatedCount++;
+            report.ChangedLines.Add($"{sheetNumber} [{label}]: '{oldValue}' → '{newValue}'");
+        }
+        else
+        {
+            report.FailedUpdates.Add($"{sheetNumber}: {parameterName}");
+        }
     }
 }
