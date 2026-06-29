@@ -5,6 +5,7 @@ using NAVFACTools.Services;
 using System;
 using System.IO;
 using System.Windows.Forms;
+using RevitTaskDialog = Autodesk.Revit.UI.TaskDialog;
 
 namespace NAVFACTools.Commands;
 
@@ -34,13 +35,13 @@ public sealed class ExportSheetIndexCommand : IExternalCommand
             var rows = service.GetSheets(settings.TargetParameterName);
             CsvExportWriter.WriteSheetIndex(path, rows);
 
-            TaskDialog.Show("NAVFAC Tools", $"Exported {rows.Count} sheets to:\n\n{path}");
+            RevitTaskDialog.Show("NAVFAC Tools", $"Exported {rows.Count} sheets to:\n\n{path}");
             return Result.Succeeded;
         }
         catch (Exception ex)
         {
             message = ex.Message;
-            TaskDialog.Show("NAVFAC Tools - Error", ex.ToString());
+            RevitTaskDialog.Show("NAVFAC Tools - Error", ex.ToString());
             return Result.Failed;
         }
     }
