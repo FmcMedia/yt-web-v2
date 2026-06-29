@@ -1,5 +1,4 @@
 using Autodesk.Revit.DB;
-using NAVFACTools.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,13 +27,12 @@ public sealed class SheetIndexService
         return new FilteredElementCollector(_document)
             .OfClass(typeof(ViewSheet))
             .Cast<ViewSheet>()
-            .Where(sheet => !sheet.IsPlaceholder)
             .Select(sheet => new RevitSheetIndexRow
             {
                 SheetElementId = sheet.Id,
                 SheetNumber = sheet.SheetNumber ?? string.Empty,
                 SheetName = sheet.Name ?? string.Empty,
-                NavfacDrawingNumber = sheet.LookupParameter(targetParameterName)?.AsString() ?? string.Empty
+                NavfacDrawingNumber = GetStringParameterValue(sheet, targetParameterName)
             })
             .OrderBy(row => row.SheetNumber, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -46,5 +44,14 @@ public sealed class SheetIndexService
             .GroupBy(row => CsvDrawingIndexReader.NormalizeSheetNumber(row.SheetNumber))
             .Where(group => group.Count() == 1)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string GetStringParameterValue(ViewSheet sheet, string parameterName)
+    {
+        Parameter? parameter = sheet.LookupParameter(parameterName);
+        if (parameter is null || parameter.StorageType != StorageType.String)
+            return string.Empty;
+
+        return parameter.AsString() ?? string.Empty;
     }
 }
