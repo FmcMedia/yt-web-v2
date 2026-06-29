@@ -7,6 +7,7 @@ namespace NAVFACTools.Services;
 public sealed class NavfacSettings
 {
     public string TargetParameterName { get; set; } = "NAVFAC DWG. NO.";
+    public string DrawingNumberParameterName { get; set; } = "NO.";
     public string? LastCsvFolder { get; set; }
 }
 
