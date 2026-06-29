@@ -27,6 +27,15 @@ public sealed class CsvDrawingIndexReader
         "SHEET NO."
     };
 
+    private static readonly string[] DrawingNumberHeaderCandidates =
+    {
+        "NO.",
+        "NO",
+        "NUMBER",
+        "INDEX NO",
+        "INDEX NUMBER"
+    };
+
     private static readonly string[] TitleHeaderCandidates =
     {
         "SHEET TITLE",
@@ -56,6 +65,7 @@ public sealed class CsvDrawingIndexReader
         var header = parsed[headerIndex].Cells;
         int navfacIndex = FindColumn(header, NavfacHeaderCandidates);
         int sheetIndex = FindColumn(header, SheetHeaderCandidates);
+        int drawingNumberIndex = FindColumn(header, DrawingNumberHeaderCandidates);
         int titleIndex = FindColumn(header, TitleHeaderCandidates);
 
         if (navfacIndex < 0)
@@ -69,6 +79,7 @@ public sealed class CsvDrawingIndexReader
         {
             string navfac = GetCell(item.Cells, navfacIndex);
             string sheet = NormalizeSheetNumber(GetCell(item.Cells, sheetIndex));
+            string? drawingNumber = drawingNumberIndex >= 0 ? GetCell(item.Cells, drawingNumberIndex) : null;
             string? title = titleIndex >= 0 ? GetCell(item.Cells, titleIndex) : null;
 
             if (string.IsNullOrWhiteSpace(sheet))
@@ -77,7 +88,7 @@ public sealed class CsvDrawingIndexReader
             if (string.IsNullOrWhiteSpace(navfac))
                 continue;
 
-            rows.Add(new DrawingIndexRow(item.LineNumber, sheet, navfac.Trim(), title));
+            rows.Add(new DrawingIndexRow(item.LineNumber, sheet, navfac.Trim(), drawingNumber?.Trim(), title));
         }
 
         return rows;
