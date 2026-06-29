@@ -77,10 +77,24 @@ public sealed class SheetNavfacUpdater
                 if (!sheets.TryGetValue(sheetNumber, out ViewSheet? sheet))
                     continue;
 
-                UpdateStringParameter(sheet, sheetNumber, targetParameterName, row.NavfacDrawingNumber, report, "NAVFAC");
+                UpdateStringParameter(
+                    sheet,
+                    sheetNumber,
+                    new[] { targetParameterName, "NAVFAC_NO", "NAVFAC DWG. NO.", "NAVFAC DWG NO" },
+                    row.NavfacDrawingNumber,
+                    report,
+                    "NAVFAC");
 
                 if (!string.IsNullOrWhiteSpace(drawingNumberParameterName) && !string.IsNullOrWhiteSpace(row.DrawingNumber))
-                    UpdateStringParameter(sheet, sheetNumber, drawingNumberParameterName, row.DrawingNumber!, report, "NO");
+                {
+                    UpdateStringParameter(
+                        sheet,
+                        sheetNumber,
+                        new[] { drawingNumberParameterName, "NO.", "NO", "Number", "Drawing Number" },
+                        row.DrawingNumber!,
+                        report,
+                        "NO");
+                }
             }
 
             transaction.Commit();
@@ -94,12 +108,29 @@ public sealed class SheetNavfacUpdater
         return report;
     }
 
-    private static void UpdateStringParameter(ViewSheet sheet, string sheetNumber, string parameterName, string newValueRaw, ImportReport report, string label)
+    private static void UpdateStringParameter(ViewSheet sheet, string sheetNumber, IEnumerable<string> parameterNames, string newValueRaw, ImportReport report, string label)
     {
-        Parameter? parameter = sheet.LookupParameter(parameterName);
+        string[] candidates = parameterNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        Parameter? parameter = null;
+        string? matchedName = null;
+
+        foreach (string candidate in candidates)
+        {
+            parameter = sheet.LookupParameter(candidate);
+            if (parameter is not null)
+            {
+                matchedName = candidate;
+                break;
+            }
+        }
+
         if (parameter is null)
         {
-            report.MissingTargetParameter.Add($"{sheetNumber}: {parameterName}");
+            report.MissingTargetParameter.Add($"{sheetNumber}: {string.Join(" / ", candidates)}");
             return;
         }
 
@@ -111,7 +142,7 @@ public sealed class SheetNavfacUpdater
 
         if (parameter.StorageType != StorageType.String)
         {
-            report.FailedUpdates.Add($"{sheetNumber}: {parameterName} is {parameter.StorageType}, expected String");
+            report.FailedUpdates.Add($"{sheetNumber}: {matchedName} is {parameter.StorageType}, expected String");
             return;
         }
 
@@ -128,11 +159,11 @@ public sealed class SheetNavfacUpdater
         if (success)
         {
             report.UpdatedCount++;
-            report.ChangedLines.Add($"{sheetNumber} [{label}]: '{oldValue}' → '{newValue}'");
+            report.ChangedLines.Add($"{sheetNumber} [{label}/{matchedName}]: '{oldValue}' → '{newValue}'");
         }
         else
         {
-            report.FailedUpdates.Add($"{sheetNumber}: {parameterName}");
+            report.FailedUpdates.Add($"{sheetNumber}: {matchedName}");
         }
     }
 }
