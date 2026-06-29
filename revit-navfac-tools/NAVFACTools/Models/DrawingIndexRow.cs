@@ -4,5 +4,6 @@ public sealed record DrawingIndexRow(
     int SourceLine,
     string SheetNumber,
     string NavfacDrawingNumber,
+    string? DrawingNumber,
     string? SheetTitle
 );
