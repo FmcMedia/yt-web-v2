@@ -7,6 +7,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using RevitTaskDialog = Autodesk.Revit.UI.TaskDialog;
+using RevitTaskDialogResult = Autodesk.Revit.UI.TaskDialogResult;
 
 namespace NAVFACTools.Commands;
 
@@ -40,29 +42,29 @@ public sealed class ImportDrawingNumbersCommand : IExternalCommand
 
             if (rows.Count == 0)
             {
-                TaskDialog.Show("NAVFAC Tools", "No usable drawing-number rows were found in the selected CSV.");
+                RevitTaskDialog.Show("NAVFAC Tools", "No usable drawing-number rows were found in the selected CSV.");
                 return Result.Cancelled;
             }
 
             string previewText = BuildPreviewText(rows, settings.TargetParameterName);
-            TaskDialogResult previewResult = TaskDialog.Show(
+            RevitTaskDialogResult previewResult = RevitTaskDialog.Show(
                 "NAVFAC Tools - Confirm Import",
                 previewText,
                 TaskDialogCommonButtons.Ok | TaskDialogCommonButtons.Cancel);
 
-            if (previewResult != TaskDialogResult.Ok)
+            if (previewResult != RevitTaskDialogResult.Ok)
                 return Result.Cancelled;
 
             var updater = new SheetNavfacUpdater(document);
             ImportReport report = updater.Update(rows, settings.TargetParameterName);
 
-            TaskDialog.Show("NAVFAC Tools", report.ToDialogText());
+            RevitTaskDialog.Show("NAVFAC Tools", report.ToDialogText());
             return Result.Succeeded;
         }
         catch (Exception ex)
         {
             message = ex.Message;
-            TaskDialog.Show("NAVFAC Tools - Error", ex.ToString());
+            RevitTaskDialog.Show("NAVFAC Tools - Error", ex.ToString());
             return Result.Failed;
         }
     }
