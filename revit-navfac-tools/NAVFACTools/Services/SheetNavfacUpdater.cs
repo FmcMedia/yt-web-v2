@@ -49,10 +49,11 @@ public sealed class SheetNavfacUpdater
         var sheets = new FilteredElementCollector(_document)
             .OfClass(typeof(ViewSheet))
             .Cast<ViewSheet>()
-            .Where(s => !s.IsPlaceholder)
+            .GroupBy(s => CsvDrawingIndexReader.NormalizeSheetNumber(s.SheetNumber))
+            .Where(g => g.Count() == 1)
             .ToDictionary(
-                s => CsvDrawingIndexReader.NormalizeSheetNumber(s.SheetNumber),
-                s => s,
+                g => g.Key,
+                g => g.First(),
                 StringComparer.OrdinalIgnoreCase);
 
         report.RevitSheetsFound = sheets.Count;
@@ -86,6 +87,12 @@ public sealed class SheetNavfacUpdater
                 if (parameter.IsReadOnly)
                 {
                     report.SkippedLockedOrReadOnlyCount++;
+                    continue;
+                }
+
+                if (parameter.StorageType != StorageType.String)
+                {
+                    report.FailedUpdates.Add($"{sheetNumber}: parameter is {parameter.StorageType}, expected String");
                     continue;
                 }
 
