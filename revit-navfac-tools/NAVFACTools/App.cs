@@ -6,11 +6,84 @@ namespace NAVFACTools;
 
 public sealed class App : IExternalApplication
 {
+    private const string TabName = "NAVFAC Tools";
+    private const string DrawingPanelName = "Drawing Index";
+    private const string UtilityPanelName = "Utilities";
+
     public Result OnStartup(UIControlledApplication application)
     {
-        const string tabName = "NAVFAC Tools";
-        const string panelName = "Drawing Index";
+        TryCreateRibbonTab(application, TabName);
 
+        RibbonPanel drawingPanel = GetOrCreatePanel(application, TabName, DrawingPanelName);
+        RibbonPanel utilityPanel = GetOrCreatePanel(application, TabName, UtilityPanelName);
+        string assemblyPath = Assembly.GetExecutingAssembly().Location;
+
+        AddButton(
+            drawingPanel,
+            "NAVFAC_ImportDrawingNumbers",
+            "Import\nDrawing Numbers",
+            assemblyPath,
+            "NAVFACTools.Commands.ImportDrawingNumbersCommand",
+            "Import NAVFAC drawing numbers from a CSV and write them to Revit sheet parameters.");
+
+        AddButton(
+            drawingPanel,
+            "NAVFAC_ExportSheetIndex",
+            "Export\nSheet Index",
+            assemblyPath,
+            "NAVFACTools.Commands.ExportSheetIndexCommand",
+            "Export the current Revit sheet index to a CSV file.");
+
+        AddButton(
+            drawingPanel,
+            "NAVFAC_CompareCsvToRevit",
+            "Compare\nCSV",
+            assemblyPath,
+            "NAVFACTools.Commands.CompareCsvToRevitCommand",
+            "Compare a NAVFAC CSV against the current Revit sheets without changing the model.");
+
+        AddButton(
+            utilityPanel,
+            "NAVFAC_About",
+            "About",
+            assemblyPath,
+            "NAVFACTools.Commands.AboutCommand",
+            "Show NAVFAC Tools version and installation information.");
+
+        return Result.Succeeded;
+    }
+
+    public Result OnShutdown(UIControlledApplication application)
+    {
+        return Result.Succeeded;
+    }
+
+    private static void AddButton(RibbonPanel panel, string internalName, string displayName, string assemblyPath, string className, string toolTip)
+    {
+        if (PanelContainsButton(panel, internalName))
+            return;
+
+        var buttonData = new PushButtonData(internalName, displayName, assemblyPath, className)
+        {
+            ToolTip = toolTip
+        };
+
+        panel.AddItem(buttonData);
+    }
+
+    private static bool PanelContainsButton(RibbonPanel panel, string internalName)
+    {
+        foreach (RibbonItem item in panel.GetItems())
+        {
+            if (string.Equals(item.Name, internalName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static void TryCreateRibbonTab(UIControlledApplication application, string tabName)
+    {
         try
         {
             application.CreateRibbonTab(tabName);
@@ -19,36 +92,15 @@ public sealed class App : IExternalApplication
         {
             // Tab already exists.
         }
-
-        RibbonPanel panel;
-        try
-        {
-            panel = application.CreateRibbonPanel(tabName, panelName);
-        }
-        catch
-        {
-            panel = FindPanel(application, tabName, panelName) ?? application.CreateRibbonPanel(tabName, panelName);
-        }
-
-        string assemblyPath = Assembly.GetExecutingAssembly().Location;
-
-        var importButton = new PushButtonData(
-            "NAVFAC_ImportDrawingNumbers",
-            "Import\nDrawing Numbers",
-            assemblyPath,
-            "NAVFACTools.Commands.ImportDrawingNumbersCommand")
-        {
-            ToolTip = "Import NAVFAC drawing numbers from a CSV and write them to Revit sheet parameters."
-        };
-
-        panel.AddItem(importButton);
-
-        return Result.Succeeded;
     }
 
-    public Result OnShutdown(UIControlledApplication application)
+    private static RibbonPanel GetOrCreatePanel(UIControlledApplication application, string tabName, string panelName)
     {
-        return Result.Succeeded;
+        RibbonPanel? existing = FindPanel(application, tabName, panelName);
+        if (existing is not null)
+            return existing;
+
+        return application.CreateRibbonPanel(tabName, panelName);
     }
 
     private static RibbonPanel? FindPanel(UIControlledApplication application, string tabName, string panelName)
