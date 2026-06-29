@@ -46,7 +46,7 @@ public sealed class ImportDrawingNumbersCommand : IExternalCommand
                 return Result.Cancelled;
             }
 
-            string previewText = BuildPreviewText(rows, settings.TargetParameterName);
+            string previewText = BuildPreviewText(rows, settings.TargetParameterName, settings.DrawingNumberParameterName);
             RevitTaskDialogResult previewResult = RevitTaskDialog.Show(
                 "NAVFAC Tools - Confirm Import",
                 previewText,
@@ -56,7 +56,7 @@ public sealed class ImportDrawingNumbersCommand : IExternalCommand
                 return Result.Cancelled;
 
             var updater = new SheetNavfacUpdater(document);
-            ImportReport report = updater.Update(rows, settings.TargetParameterName);
+            ImportReport report = updater.Update(rows, settings.TargetParameterName, settings.DrawingNumberParameterName);
 
             RevitTaskDialog.Show("NAVFAC Tools", report.ToDialogText());
             return Result.Succeeded;
@@ -88,14 +88,15 @@ public sealed class ImportDrawingNumbersCommand : IExternalCommand
         return result == DialogResult.OK ? dialog.FileName : null;
     }
 
-    private static string BuildPreviewText(System.Collections.Generic.IReadOnlyList<DrawingIndexRow> rows, string targetParameterName)
+    private static string BuildPreviewText(System.Collections.Generic.IReadOnlyList<DrawingIndexRow> rows, string navfacParameterName, string drawingNumberParameterName)
     {
-        var firstRows = rows.Take(10).Select(r => $"  {r.SheetNumber} → {r.NavfacDrawingNumber}");
+        var firstRows = rows.Take(10).Select(r => $"  {r.SheetNumber} → NAVFAC {r.NavfacDrawingNumber}, NO {r.DrawingNumber}");
 
         return
-            $"Ready to import NAVFAC drawing numbers.\n\n" +
+            $"Ready to import drawing index values.\n\n" +
             $"Rows found: {rows.Count}\n" +
-            $"Target Revit sheet parameter: {targetParameterName}\n\n" +
+            $"NAVFAC target parameter: {navfacParameterName}\n" +
+            $"NO. target parameter: {drawingNumberParameterName}\n\n" +
             "First rows:\n" +
             string.Join("\n", firstRows) +
             (rows.Count > 10 ? $"\n  ...and {rows.Count - 10} more" : string.Empty) +
