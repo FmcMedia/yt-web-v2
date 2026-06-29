@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>NAVFAC Tools</Name>
+    <Assembly>%AppData%\Autodesk\Revit\Addins\2025\NAVFACTools\NAVFACTools.dll</Assembly>
+    <AddInId>9C8B06E1-2060-4A6B-9A0F-1133B1735D4B</AddInId>
+    <FullClassName>NAVFACTools.App</FullClassName>
+    <VendorId>FMC</VendorId>
+    <VendorDescription>FMC Media Services</VendorDescription>
+  </AddIn>
+</RevitAddIns>
