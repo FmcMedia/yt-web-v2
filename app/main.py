@@ -279,7 +279,9 @@ def update_job(job_id: str, **kwargs):
             jobs[job_id].update(kwargs)
 
 
-def make_progress_hook(job_id: str, cancel_event: threading.Event, captured_filename: list):
+def make_progress_hook(job_id: str, cancel_event: threading.Event, captured_filename: list,
+                       is_mp3: bool = False, conversion_started: threading.Event = None,
+                       source_info: dict = None):
     def hook(d: dict):
         if cancel_event.is_set():
             raise DownloadCancelled("Download cancelled by user")
@@ -303,20 +305,57 @@ def make_progress_hook(job_id: str, cancel_event: threading.Event, captured_file
                 total=total,
             )
         elif d["status"] == "finished":
-            update_job(job_id, status="processing", progress=95)
+            update_job(job_id, status="processing", progress=95, speed=None, eta=None)
             if d.get("filename"):
                 captured_filename[0] = Path(d["filename"]).name
+            if is_mp3 and conversion_started is not None:
+                if source_info is not None:
+                    duration = (d.get("info_dict") or {}).get("duration")
+                    if duration:
+                        source_info["duration"] = float(duration)
+                conversion_started.set()
 
     return hook
 
 
-def make_postprocessor_hook(captured_filename: list):
+def make_postprocessor_hook(captured_filename: list, conversion_done: threading.Event = None):
     def hook(d: dict):
         if d.get("status") == "finished":
             filepath = (d.get("info_dict") or {}).get("filepath")
             if filepath:
                 captured_filename[0] = Path(filepath).name
+            if conversion_done is not None:
+                conversion_done.set()
     return hook
+
+
+def mp3_conversion_monitor(job_id: str, output_dir: Path, conversion_started: threading.Event,
+                            conversion_done: threading.Event, source_info: dict):
+    if not conversion_started.wait(timeout=120):
+        return
+
+    update_job(job_id, message="Converting to MP3...")
+
+    duration = source_info.get("duration")
+    expected_bytes = int(duration * 24000) if duration else None  # 192kbps = 24000 bytes/sec
+
+    while not conversion_done.wait(timeout=0.5):
+        if not expected_bytes:
+            continue
+        mp3_files = [
+            f for f in output_dir.glob("*.mp3")
+            if f.is_file() and not f.name.endswith(".part")
+        ]
+        if not mp3_files:
+            continue
+        try:
+            target = max(mp3_files, key=lambda f: f.stat().st_mtime)
+            current_size = target.stat().st_size
+            ratio = min(current_size / expected_bytes, 0.99)
+            progress = 95 + ratio * 4  # 95 → 99
+            update_job(job_id, progress=round(progress, 1))
+        except Exception:
+            pass
 
 
 def download_worker(job_id: str, url: str, format_id: Optional[str], options: dict, cancel_event: threading.Event):
@@ -346,8 +385,23 @@ def download_worker(job_id: str, url: str, format_id: Optional[str], options: di
             "nooverwrites": False,
         })
     elif format_id == "audio-mp3":
+        conversion_started = threading.Event()
+        conversion_done = threading.Event()
+        source_info = {}
+        ydl_opts["progress_hooks"] = [make_progress_hook(
+            job_id, cancel_event, captured_filename,
+            is_mp3=True, conversion_started=conversion_started, source_info=source_info,
+        )]
+        ydl_opts["postprocessor_hooks"] = [make_postprocessor_hook(
+            captured_filename, conversion_done=conversion_done,
+        )]
         ydl_opts["format"] = "bestaudio[protocol^=http]/bestaudio/best"
         ydl_opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
+        threading.Thread(
+            target=mp3_conversion_monitor,
+            args=(job_id, output_dir, conversion_started, conversion_done, source_info),
+            daemon=True,
+        ).start()
     else:
         ydl_opts["merge_output_format"] = "mp4"
         ydl_opts["format"] = format_id if format_id and format_id != "best" else "bestvideo+bestaudio/best"
@@ -438,6 +492,7 @@ def download_worker(job_id: str, url: str, format_id: Optional[str], options: di
                         pass
                 jobs[job_id]["status"] = "completed"
                 jobs[job_id]["progress"] = 100
+                jobs[job_id]["message"] = None
 
         # Persist to history
         if filename:
@@ -488,6 +543,7 @@ async def start_download(
             "eta": None,
             "filename": None,
             "error": None,
+            "message": None,
             "created_at": time.time(),
         }
 

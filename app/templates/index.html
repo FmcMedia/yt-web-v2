@@ -749,7 +749,7 @@
                     starting: 'Starting', downloading: 'Downloading', processing: 'Processing',
                     completed: 'Done', error: 'Error', cancelled: 'Cancelled'
                 };
-                statusEl.innerText = labels[status.status] || status.status;
+                statusEl.innerText = (status.status === 'processing' && status.message) ? status.message : (labels[status.status] || status.status);
                 if (status.status === 'completed')  statusEl.className = 'status-badge bg-emerald-900 text-emerald-400';
                 if (status.status === 'error')      statusEl.className = 'status-badge bg-red-900 text-red-400';
                 if (status.status === 'cancelled')  statusEl.className = 'status-badge bg-slate-700 text-slate-400';
@@ -775,6 +775,7 @@
                     let txt = typeof status.progress === 'number' ? `${status.progress}%` : '';
                     if (status.speed) txt += ` at ${status.speed}`;
                     if (status.status === 'starting') txt = 'starting...';
+                    if (status.status === 'processing' && status.message) txt = status.message + (txt ? ' · ' + txt : '');
                     mainStatus.textContent = txt || status.status;
                 } else if (status.status === 'completed') {
                     mainStatus.textContent = 'done';
