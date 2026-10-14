@@ -93,9 +93,15 @@ def save_history_entry(filename: str, entry: dict):
 load_history()
 
 
+def normalize_url(url: str) -> str:
+    if url and "://" not in url:
+        url = "https://" + url
+    return url
+
+
 def is_valid_youtube_url(url: str) -> bool:
     try:
-        parsed = urlparse(url)
+        parsed = urlparse(normalize_url(url))
         return parsed.scheme in ("http", "https") and parsed.netloc.lower().lstrip("www.") in (
             "youtube.com", "youtu.be", "m.youtube.com",
         )
@@ -140,6 +146,7 @@ async def index(request: Request):
 
 @app.get("/api/info")
 async def get_info(url: str):
+    url = normalize_url(url)
     if not url or not is_valid_youtube_url(url):
         raise HTTPException(400, "Please provide a valid YouTube URL")
 
@@ -436,6 +443,7 @@ async def start_download(
     write_subtitles: bool = Form(False),
     embed_thumbnail: bool = Form(False),
 ):
+    url = normalize_url(url)
     if not url:
         raise HTTPException(400, "URL is required")
 
