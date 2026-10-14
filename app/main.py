@@ -358,20 +358,19 @@ def download_worker(job_id: str, url: str, format_id: Optional[str], options: di
         except Exception:
             pass
 
+    ext_set = TRANSCRIPT_EXTENSIONS if is_transcript else MEDIA_EXTENSIONS
+    existing_files = {f for f in output_dir.glob("*") if f.is_file()}
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        with jobs_lock:
-            created_at = jobs.get(job_id, {}).get("created_at", time.time())
-
-        ext_set = TRANSCRIPT_EXTENSIONS if is_transcript else MEDIA_EXTENSIONS
         candidates = [
             f for f in output_dir.glob("*")
             if f.is_file()
+            and f not in existing_files
             and f.suffix.lower() in ext_set
             and not str(f).endswith(".part")
-            and f.stat().st_mtime >= created_at - 2
         ]
 
         filename = None
