@@ -202,6 +202,7 @@ async def get_info(url: str):
 
     audio_size = max((fmt_size(f) or 0 for f in audio_formats), default=0) or None
     download_options.append({"value": "bestaudio/best", "label": "Audio only (best)", "filesize_estimate": audio_size})
+    download_options.append({"value": "audio-mp3", "label": "Audio only (MP3)", "filesize_estimate": audio_size})
 
     has_subs = bool(info.get("subtitles") or info.get("automatic_captions"))
     download_options.append({
@@ -323,6 +324,9 @@ def download_worker(job_id: str, url: str, format_id: Optional[str], options: di
             "subtitlesformat": "srt",
             "nooverwrites": False,
         })
+    elif format_id == "audio-mp3":
+        ydl_opts["format"] = "bestaudio/best"
+        ydl_opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
     else:
         ydl_opts["merge_output_format"] = "mp4"
         ydl_opts["format"] = format_id if format_id and format_id != "best" else "bestvideo+bestaudio/best"
