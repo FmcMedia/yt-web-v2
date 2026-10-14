@@ -332,7 +332,7 @@ def download_worker(job_id: str, url: str, format_id: Optional[str], options: di
             "nooverwrites": False,
         })
     elif format_id == "audio-mp3":
-        ydl_opts["format"] = "bestaudio/best"
+        ydl_opts["format"] = "bestaudio[protocol^=http]/bestaudio/best"
         ydl_opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
     else:
         ydl_opts["merge_output_format"] = "mp4"
