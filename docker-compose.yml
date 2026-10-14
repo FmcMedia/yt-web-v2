@@ -9,7 +9,7 @@ services:
       - yt-web-transcripts:/app/transcripts
       - yt-web-history:/app/history
     environment:
-      - STORAGE_LIMIT_GB=20
+      - STORAGE_LIMIT_GB=80
     restart: unless-stopped
 
   # caddy:
