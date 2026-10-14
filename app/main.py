@@ -279,7 +279,7 @@ def update_job(job_id: str, **kwargs):
             jobs[job_id].update(kwargs)
 
 
-def make_progress_hook(job_id: str, cancel_event: threading.Event):
+def make_progress_hook(job_id: str, cancel_event: threading.Event, captured_filename: list):
     def hook(d: dict):
         if cancel_event.is_set():
             raise DownloadCancelled("Download cancelled by user")
@@ -304,7 +304,18 @@ def make_progress_hook(job_id: str, cancel_event: threading.Event):
             )
         elif d["status"] == "finished":
             update_job(job_id, status="processing", progress=95)
+            if d.get("filename"):
+                captured_filename[0] = Path(d["filename"]).name
 
+    return hook
+
+
+def make_postprocessor_hook(captured_filename: list):
+    def hook(d: dict):
+        if d.get("status") == "finished":
+            filepath = (d.get("info_dict") or {}).get("filepath")
+            if filepath:
+                captured_filename[0] = Path(filepath).name
     return hook
 
 
@@ -315,11 +326,14 @@ def download_worker(job_id: str, url: str, format_id: Optional[str], options: di
 
     update_job(job_id, status="starting", progress=0)
 
+    captured_filename = [None]
+
     ydl_opts = {
         **YTDLP_COMMON,
         "outtmpl": output_template,
         "noplaylist": True,
-        "progress_hooks": [make_progress_hook(job_id, cancel_event)],
+        "progress_hooks": [make_progress_hook(job_id, cancel_event, captured_filename)],
+        "postprocessor_hooks": [make_postprocessor_hook(captured_filename)],
     }
 
     if is_transcript:
@@ -372,6 +386,19 @@ def download_worker(job_id: str, url: str, format_id: Optional[str], options: di
             and f.suffix.lower() in ext_set
             and not str(f).endswith(".part")
         ]
+
+        # Use hook-captured filename first; fall back to new-file scan; last resort mtime scan
+        if captured_filename[0] and (output_dir / captured_filename[0]).exists():
+            latest = output_dir / captured_filename[0]
+            candidates = [latest]
+        elif not candidates:
+            candidates = [
+                f for f in output_dir.glob("*")
+                if f.is_file()
+                and f.suffix.lower() in ext_set
+                and not str(f).endswith(".part")
+                and f.stat().st_mtime >= time.time() - 10
+            ]
 
         filename = None
         if candidates:
