@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from urllib.parse import urlparse
 
-from .transcript_utils import srt_to_markdown
+from transcript_utils import srt_to_markdown
 
 app = FastAPI(title="yt-web - DRM-Free YouTube Downloader")
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
